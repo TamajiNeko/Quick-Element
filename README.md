@@ -1,3 +1,4 @@
+# Quick Element
 **Quick Element** is an Android mobile card game inspired by **Dominoes** and **Uno**. The core theme of the game is about forming chemical bonds between different elements.
 
 # Objective
