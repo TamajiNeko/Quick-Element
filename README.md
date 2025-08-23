@@ -1,5 +1,6 @@
 ![](resoucre/banner.png)
 <h1 align="center">Quick Element</h1>
+
 **Quick Element** is an Android mobile card game inspired by **Dominoes** and **Uno**. The core theme of the game is about forming chemical bonds between different elements.
 
 ## Objective
@@ -20,5 +21,6 @@ The goal is to teach players about chemical bonding through a fun and accessible
 ## What if a player has no knowledge of chemistry?
 > [!TIP] 
 > When you select a card, **Quick Element** highlights the valid spots where you can place it. This ensures that anyone can enjoy the game and learn about chemical bonds as they play, regardless of their chemistry background.
+
 
 
