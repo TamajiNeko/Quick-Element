@@ -37,5 +37,18 @@ body {
   .logo {
     width: 20rem;
   }
+  .UserNameForm {
+    width: 100vh;
+    height: 50vh;
+  }
+}
+
+@media (max-height: 400px) {
+  .touchStart {
+    bottom: -2rem;
+  }
+  .toggleFullscreen {
+    bottom: -2.5rem;
+  }
 }
 
