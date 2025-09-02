@@ -1,21 +1,18 @@
 import lobbyRouter from "@/../lib/lobbyRouter";
-import { cookies } from 'next/headers';
 import FullScreenButton from "../../../../componets/fullScreenButton";
-import UserNamePlate from "../../../../componets/userNamePlate";
+import UserNamePlate from "../../../../componets/UserName";
 
 export const metadata = {
   title: 'Louge - Quick Element'
 }
 
 export default function HomePage() {
-  const cookieStore = cookies();
-  const username = cookieStore.get('username')?.value || null;
   
   lobbyRouter.enforceAuthentication();
 
   return (
     <main>
-      <UserNamePlate username={username}/>
+      <UserNamePlate/>
         <div className="flex flex-col justify-center items-center h-screen">
           <p className="text-[1.5rem] text-white">Loading...</p>
         </div>

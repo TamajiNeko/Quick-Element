@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 
-const FullScreenButton = function() {
+export default function FullScreenButton() {
   const [imageSrc, setImageSrc] = useState('/expand.svg');
 
   const toggleFullscreen = function() {
@@ -32,10 +32,8 @@ const FullScreenButton = function() {
   }, []);
 
   return (
-    <button onClick={toggleFullscreen} className='toggleFullscreen absolute bottom-[1rem] right-[1rem]'>
+    <button onClick={toggleFullscreen} className='absolute bottom-[1rem] right-[1rem]'>
       <img src={imageSrc} id="toggleFullscreenImage" className="w-10 h-10"></img>
     </button>
   );
 };
-
-export default FullScreenButton;
