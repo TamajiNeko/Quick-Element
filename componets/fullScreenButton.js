@@ -33,7 +33,7 @@ export default function FullScreenButton() {
 
   return (
     <button onClick={toggleFullscreen} className='absolute bottom-[1rem] right-[1rem]'>
-      <img src={imageSrc} id="toggleFullscreenImage" className="w-10 h-10"></img>
+      <img src={imageSrc} id="toggleFullscreenImage" className="w-10 h-10 cursor-pointer"></img>
     </button>
   );
 };

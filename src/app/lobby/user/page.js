@@ -7,7 +7,7 @@ export const metadata = {
   title: 'Create User - Quick Element'
 }
 
-export default function Home() {
+export default function Page() {
   LobbyRouter.enforceNoAuthentication();
   return (
     <main>

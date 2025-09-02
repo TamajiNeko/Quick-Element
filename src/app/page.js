@@ -5,7 +5,7 @@ import FullScreenButton from "../../componets/fullScreenButton";
 
 import { useState, useEffect } from 'react';
 
-export default function HomePage() {
+export default function Page() {
 
   useEffect(() => {
     document.title = "Quik Element";
