@@ -13,13 +13,16 @@
     "@fortawesome/free-regular-svg-icons": "^7.0.0",
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@fortawesome/react-fontawesome": "^3.0.0",
+    "@tailwindcss/postcss": "^4",
+    "dotenv": "^17.2.2",
+    "mongoose": "^8.18.0",
+    "mysql2": "^3.14.4",
     "next": "15.5.0",
     "next-connect": "^1.0.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
-    "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4"
   }
 }
