@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '../../../../lib/mysql';
 import RoomCodeGenerator from '../../../../lib/roomCodeGenerator';
+import CookieService from '../../../../lib/cookieService';
 
 export async function GET(request) {
   const { pathname, searchParams } = request.nextUrl;
@@ -37,23 +38,21 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Table name is missing from the URL.' }, { status: 400 });
   }
 
-  const set = searchParams.get('set');
+  const create = searchParams.get('create');
   const remove = searchParams.get('remove');
 
   try {
     const db = await pool.getConnection();
 
-    if (set) {
-      const data = await request.json();
-      const { playerA, playerB } = data;
+    if (create) {
+      const playerCookieService = new CookieService('username');
+      const playerA = await playerCookieService.getCookie();
       const id = RoomCodeGenerator();
-      
-      if (!playerA || !playerB) {
-        return NextResponse.json({ error: 'Players are required in the request body.' }, { status: 400 });
-      }
+      const roomCookieService = new CookieService('room');
+      await roomCookieService.setCookie(id); 
 
-      let query = `INSERT INTO ${tableName} (id, playerA, playerB) VALUES (?, ?, ?)`;
-      const values = [id, playerA, playerB];
+      let query = `INSERT INTO ${tableName} (id, playerA) VALUES (?, ?)`;
+      const values = [id, playerA];
 
       await db.execute(query, values);
       db.release();
