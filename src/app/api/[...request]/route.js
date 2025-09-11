@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import pool from '../../../../lib/mysql';
-import RoomCodeGenerator from '../../../../lib/roomCodeGenerator';
-import CookieService from '../../../../lib/cookieService';
+import pool from '../../../../lib/Mysql';
+import RoomCodeGenerator from '../../../../lib/RoomCodeGenerator';
+import CookieService from '../../../../lib/CookieService';
 
 export async function GET(request) {
   const { pathname, searchParams } = request.nextUrl;

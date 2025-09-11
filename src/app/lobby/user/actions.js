@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import CookieService from '../../../../lib/cookieService';
+import CookieService from '../../../../lib/CookieService';
 
 export async function setUsername(formData) {
   const userName = formData.get('userName');

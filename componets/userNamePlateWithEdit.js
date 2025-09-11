@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { deleteUsername } from '../lib/deleteUserName';
+import { deleteUsername } from '../lib/DeleteUserName';
 
 export default function UserNamePlateWithEdit({ username }) {
   const handleDeleteUsername = () => {

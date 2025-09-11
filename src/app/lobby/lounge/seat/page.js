@@ -1,8 +1,8 @@
-import FullScreenButton from "../../../../../componets/fullScreenButton"
-import UserNamePlate from "../../../../../componets/userNamePlate"
-import RoomCodePlate from "../../../../../componets/roomCodePlate";
-import CookieService from '../../../../../lib/cookieService';
-import lobbyRouter from "../../../../../lib/lobbyRouter";
+import FullScreenButton from "../../../../../componets/FullScreenButton"
+import UserNamePlate from "../../../../../componets/UserNamePlate"
+import RoomCodePlate from "../../../../../componets/RoomCodePlate";
+import CookieService from '../../../../../lib/CookieService';
+import lobbyRouter from "../../../../../lib/LobbyRouter";
 import { cookies } from 'next/headers';
 
 export const metadata = {

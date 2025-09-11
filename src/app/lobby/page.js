@@ -1,4 +1,4 @@
-import LobbyRouter from '@/../../lib/lobbyRouter';
+import LobbyRouter from '../../../lib/LobbyRouter';
 
 export default function Page() {
   LobbyRouter.handleRequest();

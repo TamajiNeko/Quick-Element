@@ -1,7 +1,7 @@
-import UserNameForm from "./userNameForm";
-import LobbyRouter from "@/../lib/lobbyRouter";
-import FullScreenButton from '../../../../componets/fullScreenButton';
-import { setUsername } from './actions';
+import UserNameForm from "./UserNameForm";
+import LobbyRouter from "../../../../lib/LobbyRouter";
+import FullScreenButton from '../../../../componets/FullScreenButton';
+import { setUsername } from './Actions';
 
 export const metadata = {
   title: 'Create User - Quick Element'

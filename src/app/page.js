@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import FullScreenButton from "../../componets/fullScreenButton";
+import FullScreenButton from "../../componets/FullScreenButton";
 
 import { useState, useEffect } from 'react';
 

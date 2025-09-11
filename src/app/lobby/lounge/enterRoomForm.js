@@ -5,19 +5,24 @@ import { redirect } from 'next/navigation';
 const RoomCodeForm = () => {
 
   const handleCreateRoom = async () => {
-    let response;
-    try {
-      response = await fetch('/api/room?create=true', {
-        method: 'POST',
-      });
+    const clickBlock = false;
+    if (!clickBlock) {
+      clickBlock = true;
+      let response;
       
-    } catch (error) {
-      console.error(error);
-      return;
-    }
+      try {
+        response = await fetch('/api/room?create=true', {
+          method: 'POST',
+        });
+        
+      } catch (error) {
+        console.error(error);
+        return;
+      }
 
-    if (response.ok) {
-      redirect('/lobby/lounge/seat');
+      if (response.ok) {
+        redirect('/lobby/lounge/seat');
+      }
     }
   };
 

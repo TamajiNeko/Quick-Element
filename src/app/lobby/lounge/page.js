@@ -1,8 +1,8 @@
-import lobbyRouter from "@/../lib/lobbyRouter";
+import lobbyRouter from "../../../../lib/LobbyRouter";
 import { cookies } from 'next/headers';
-import FullScreenButton from "../../../../componets/fullScreenButton";
-import UserNamePlateWithEdit from "../../../../componets/userNamePlateWithEdit";
-import RoomCodeForm from "./enterRoomForm";
+import FullScreenButton from "../../../../componets/FullScreenButton";
+import UserNamePlateWithEdit from "../../../../componets/UserNamePlateWithEdit";
+import RoomCodeForm from "./EnterRoomForm";
 
 export const metadata = {
   title: 'Lounge - Quick Element'
