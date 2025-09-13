@@ -40,6 +40,7 @@ export async function POST(request) {
 
   const create = searchParams.get('create');
   const remove = searchParams.get('remove');
+  const join = searchParams.get('join');
 
   try {
     const db = await pool.getConnection();
@@ -51,12 +52,23 @@ export async function POST(request) {
       const roomCookieService = new CookieService('room');
       await roomCookieService.setCookie(id); 
 
-      let query = `INSERT INTO ${tableName} (id, playerA) VALUES (?, ?)`;
+      let query = `insert into ${tableName} (id, playerA) VALUES (?, ?)`;
       const values = [id, playerA];
 
       await db.execute(query, values);
       db.release();
       return NextResponse.json({ id }, { status: 201 });
+    } else if (join) {
+      const playerCookieService = new CookieService('username');
+      const roomCookieService = new CookieService('room');
+      const playerB = await playerCookieService.getCookie();
+      const id = await roomCookieService.getCookie();
+
+      let query = `UPDATE ${tableName} SET playerB = ? WHERE id = ?`;
+      const values = [playerB, id];
+
+      await db.execute(query, values);
+      db.release();
     } else if (remove) {
       const id = remove; 
       
@@ -64,7 +76,7 @@ export async function POST(request) {
         return NextResponse.json({ error: 'ID is required to remove an entry.' }, { status: 400 });
       }
 
-      const query = `DELETE FROM ${tableName} WHERE id = ?`;
+      const query = `delete from ${tableName} where id = ?`;
       await db.execute(query, [id]);
       return NextResponse.json({ removed: id }, { status: 200 });
     } else {
