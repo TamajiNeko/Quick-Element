@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import pool from '../../../../lib/Mysql';
+import pool from '../../../../lib/MySql';
 import RoomCodeGenerator from '../../../../lib/RoomCodeGenerator';
 import CookieService from '../../../../lib/CookieService';
 
@@ -48,12 +48,13 @@ export async function POST(request) {
     if (create) {
       const playerCookieService = new CookieService('username');
       const playerA = await playerCookieService.getCookie();
+      const playerB = "Waiting..."
       const id = RoomCodeGenerator();
       const roomCookieService = new CookieService('room');
       await roomCookieService.setCookie(id); 
 
-      let query = `insert into ${tableName} (id, playerA) VALUES (?, ?)`;
-      const values = [id, playerA];
+      let query = `insert into ${tableName} (id, playerA, playerB) VALUES (?, ?, ?)`;
+      const values = [id, playerA, playerB];
 
       await db.execute(query, values);
       db.release();

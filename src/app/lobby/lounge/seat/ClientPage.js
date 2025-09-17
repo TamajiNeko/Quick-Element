@@ -1,57 +1,82 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React from "react";
 import UserNamePlate from "../../../../../componets/UserNamePlate";
 import RoomCodePlate from "../../../../../componets/RoomCodePlate";
 
-export default function ClientPage({ username, room }) {
-  const [roomData, setRoomData] = useState(null);
-  const [loading, setLoading] = useState(true);
+class RoomDisplay extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      roomData: null,
+      loading: true,
+    };
+    this.intervalId = null;
+    this.fetchRoomData = this.fetchRoomData.bind(this);
+  }
 
-  useEffect(() => {
+  async fetchRoomData() {
+    const { room } = this.props;
+    try {
+      const res = await fetch(`/api/room?get=${room}`);
+      if (!res.ok) {
+        throw new Error("Room Not Found in Server");
+      }
+      const data = await res.json();
+      this.setState({ roomData: data });
+    } catch (error) {
+      console.error("Polling error:", error);
+      this.setState({ roomData: null });
+    } finally {
+      this.setState({ loading: false });
+    }
+  }
+
+  componentDidMount() {
+    const { room } = this.props;
     if (!room || room === "N/A") {
-      setLoading(false);
+      this.setState({ loading: false });
       return;
     }
+    this.fetchRoomData();
+    this.intervalId = setInterval(this.fetchRoomData, 5000);
+  }
 
-    const fetchRoomData = async () => {
-      try {
-        const res = await fetch(`/api/room?get=${room}`);
-        if (!res.ok) {
-          throw new Error('Room Not Found in Server');
-        }
-        const data = await res.json();
-        setRoomData(data);
-      } catch (error) {
-        console.error("Polling error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  componentWillUnmount() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
 
-    fetchRoomData();
-    const intervalId = setInterval(fetchRoomData, 5000);
-    return () => clearInterval(intervalId);
-  }, [room]);
+  render() {
+    const { username, room } = this.props;
+    const { roomData, loading } = this.state;
 
-  return (
-    <main>
-      <UserNamePlate username={username} />
-      <RoomCodePlate code={room} />
-      <div className="flex flex-col justify-center items-center h-screen">
-        {loading ? (
-          <p className="text-[1.5rem]">Loading...</p>
-        ) : roomData ? (
-          <div>
-            <h2 className="text-[1.5rem]">Room Details:</h2>
-            <pre>{JSON.stringify(roomData, null, 2)}</pre>
-          </div>
-        ) : (
-          <>
-            <p className="text-[1.5rem]">Room not found ｡°(°¯᷄◠¯᷅°)°｡</p>
-          </>
-        )}
-      </div>
-    </main>
-  );
+    return (
+      <main>
+        <UserNamePlate username={username} />
+        <RoomCodePlate code={room} />
+        <div className="flex flex-col justify-center items-center h-screen">
+          {loading ? (
+            <p className="text-[1.5rem]">Loading...</p>
+          ) : roomData ? (
+            <div className='EnterForm flex flex-col items-center justify-center bg-white rounded-2xl w-[50vh] h-[25vh] text-[1.5rem]'>
+              <div className="w-[80%] mb-[0.5rem] flex flex-row">
+                <p className="text-[#39b8ff] font-black mr-[0.5rem]">P1</p><p className="text-black">{roomData.playerA}</p>
+              </div>
+              <div className="w-[80%] flex flex-row">
+                <p className="text-[#39b8ff] font-black mr-[0.5rem]">P2</p><p className="text-black mb-[1.6rem]">{roomData.playerB}</p>
+              </div>
+              <button type="submit" className='flex justify-center w-[40%] h-[20%] rounded-4xl text-white text-center font-[700] bg-[#39b8ff] cursor-pointer'>Ready</button>
+            </div>
+          ) : (
+              <p className="text-[1.45rem]">Room not found ｡°(°¯᷄◠¯᷅°)°｡</p>
+          )
+          }
+        </div>
+      </main>
+    );
+  }
 }
+
+export default RoomDisplay;

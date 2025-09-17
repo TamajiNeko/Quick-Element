@@ -11,5 +11,4 @@ export async function setUsername(formData) {
     await usernameCookieService.setCookie(userName); 
     redirect('/lobby/lounge');
   }
-  return { message: 'Username is required.' };
 }

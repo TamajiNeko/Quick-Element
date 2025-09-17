@@ -1,3 +1,4 @@
+// FullScreenButton.js
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -23,6 +24,8 @@ export default function FullScreenButton() {
         setImageSrc('/expand.svg');
       }
     };
+
+    handleFullscreenChange();
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
 
