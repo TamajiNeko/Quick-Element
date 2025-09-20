@@ -1,15 +1,38 @@
 'use client';
+import { useState } from 'react';
 
-const ReadyForm = ({ username, playerA, playerB }) =>  {
+const ReadyForm = ({ username, playerA, playerB, readyStatsA, readyStatsB }) => {
+  const [isReadyButtonDisabled, setIsReadyButtonDisabled] = useState(false);
+  const [position, setPosition] = useState('');
 
-  const handleRequest = async () => {
+  const readyStatusImages = {
+    0: '/not_ready.png',
+    1: '/ready.png',
+  };
 
-    let position = '';
-    if (username === playerA) {
-      position = "AReady"
-    } else if (username === playerB) {
-      position = "BReady"
+  const playerAImageSrc = readyStatusImages[readyStatsA];
+  const playerBImageSrc = readyStatusImages[readyStatsB];
+
+  if (username === playerA && readyStatsA !== 1) {
+    if (position !== 'AReady') {
+      setPosition('AReady');
+      setIsReadyButtonDisabled(false);
     }
+  } else if (username === playerB && readyStatsB !== 1) {
+    if (position !== 'BReady') {
+      setPosition('BReady');
+      setIsReadyButtonDisabled(false);
+    }
+  } else {
+    if (!isReadyButtonDisabled) {
+      setIsReadyButtonDisabled(true);
+    }
+  }
+  
+  const handleRequest = async (e) => {
+    e.preventDefault();
+    
+    setIsReadyButtonDisabled(true); 
 
     try {
       const response = await fetch(`/api/room?ready=${position}`, {
@@ -18,19 +41,26 @@ const ReadyForm = ({ username, playerA, playerB }) =>  {
       
     } catch (error) {
       console.error(error);
-      return;
+      setIsReadyButtonDisabled(false);
     }
   };
 
+  const buttonClass = `
+    flex justify-center w-[40%] h-[20%] rounded-4xl text-white text-center font-[700] 
+    ${isReadyButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#39b8ff] cursor-pointer'}
+  `;
+
   return (
-    <form action={handleRequest} className='EnterForm flex flex-col items-center justify-center bg-white rounded-2xl w-[50vh] h-[25vh] text-[1.5rem]'>
-        <div className="w-[80%] mb-[0.5rem] flex flex-row">
-          <p className="text-[#39b8ff] font-black mr-[0.5rem]">P1</p><p className="text-black">{playerA}</p>
-        </div>
-        <div className="w-[80%] flex flex-row">
-          <p className="text-[#39b8ff] font-black mr-[0.5rem]">P2</p><p className="text-black mb-[1.6rem]">{playerB}</p>
-        </div>
-        <button type="submit" className='flex justify-center w-[40%] h-[20%] rounded-4xl text-white text-center font-[700] bg-[#39b8ff] cursor-pointer'>Ready</button>
+    <form onSubmit={handleRequest} className='EnterForm flex flex-col items-center justify-center bg-white rounded-2xl w-[50vh] h-[25vh] text-[1.5rem]'>
+      <div className="w-[80%] pb-[.5rem] items-center flex flex-row">
+        <img src={playerAImageSrc} className="w-6 h-6 mr-[.75rem]"></img><p className="text-black">{playerA}</p>
+      </div>
+      <div className="w-[80%] pb-[1.6rem] items-center flex flex-row">
+        <img src={playerBImageSrc} className="w-6 h-6 mr-[.75rem]"></img><p className="text-black">{playerB}</p>
+      </div>
+      <button type="submit" id="readyButton" className={buttonClass} disabled={isReadyButtonDisabled}>
+        Ready
+      </button>
     </form>
   );
 };
