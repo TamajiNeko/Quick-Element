@@ -3,6 +3,7 @@
 import React from "react";
 import UserNamePlate from "../../../../../componets/UserNamePlate";
 import RoomCodePlate from "../../../../../componets/RoomCodePlate";
+import ReadyForm from "./ReadyForm";
 
 class RoomDisplay extends React.Component {
   constructor(props) {
@@ -60,15 +61,7 @@ class RoomDisplay extends React.Component {
           {loading ? (
             <p className="text-[1.5rem]">Loading...</p>
           ) : roomData ? (
-            <div className='EnterForm flex flex-col items-center justify-center bg-white rounded-2xl w-[50vh] h-[25vh] text-[1.5rem]'>
-              <div className="w-[80%] mb-[0.5rem] flex flex-row">
-                <p className="text-[#39b8ff] font-black mr-[0.5rem]">P1</p><p className="text-black">{roomData.playerA}</p>
-              </div>
-              <div className="w-[80%] flex flex-row">
-                <p className="text-[#39b8ff] font-black mr-[0.5rem]">P2</p><p className="text-black mb-[1.6rem]">{roomData.playerB}</p>
-              </div>
-              <button type="submit" className='flex justify-center w-[40%] h-[20%] rounded-4xl text-white text-center font-[700] bg-[#39b8ff] cursor-pointer'>Ready</button>
-            </div>
+            <ReadyForm username={username} playerA={roomData.playerA} playerB={roomData.playerB} />
           ) : (
               <p className="text-[1.45rem]">Room not found ｡°(°¯᷄◠¯᷅°)°｡</p>
           )

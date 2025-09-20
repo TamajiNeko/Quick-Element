@@ -41,6 +41,7 @@ export async function POST(request) {
   const create = searchParams.get('create');
   const remove = searchParams.get('remove');
   const join = searchParams.get('join');
+  const ready = searchParams.get('ready');
 
   try {
     const db = await pool.getConnection();
@@ -65,11 +66,27 @@ export async function POST(request) {
       const playerB = await playerCookieService.getCookie();
       const id = await roomCookieService.getCookie();
 
-      let query = `UPDATE ${tableName} SET playerB = ? WHERE id = ?`;
+      let query = `update ${tableName} set playerB = ? where id = ?`;
       const values = [playerB, id];
 
       await db.execute(query, values);
       db.release();
+    } else if (ready) {
+      const position = ready;
+
+      const roomCookieService = new CookieService('room');
+      const id = await roomCookieService.getCookie();
+
+      if (!position) {
+        return NextResponse.json({ error: 'Position is required' }, { status: 400 });
+      }
+
+      const query = `update ${tableName} set ${position} = ? where id = ?`;
+      const values = [true, id];
+
+      await db.execute(query, values);
+      db.release();
+      return NextResponse.json({ position: 'Is Ready' }, { status: 200 });
     } else if (remove) {
       const id = remove; 
       

@@ -20,7 +20,7 @@ export default function Page() {
     <>
       <ClientPage username={username} room={room}/>
       <BackButton function_={deleteRoomCookie}/>
-      <FullScreenButton />
+      <FullScreenButton/>
     </>
   );
 }
