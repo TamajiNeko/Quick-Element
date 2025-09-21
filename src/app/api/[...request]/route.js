@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '../../../../lib/MySql';
-import RoomCodeGenerator from '../../../../lib/RoomCodeGenerator';
+import CodeGenerator from '../../../../lib/CodeGenerator';
 import CookieService from '../../../../lib/CookieService';
 
 export async function GET(request) {
@@ -51,7 +51,8 @@ export async function POST(request) {
       const playerCookieService = new CookieService('username');
       const playerA = await playerCookieService.getCookie();
       const playerB = "Waiting..."
-      const id = RoomCodeGenerator();
+      const generateRoomCode = new CodeGenerator();
+      const id = generateRoomCode.generate(6);
       const roomCookieService = new CookieService('room');
       await roomCookieService.setCookie(id); 
 
