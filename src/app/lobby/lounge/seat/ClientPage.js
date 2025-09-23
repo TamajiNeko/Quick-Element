@@ -24,6 +24,9 @@ class RoomDisplay extends React.Component {
         throw new Error("Room Not Found in Server");
       }
       const data = await res.json();
+      if (data.AReady == 1 && data.BReady == 1) {
+        window.location.href = "/game";
+      }
       this.setState({ roomData: data });
     } catch (error) {
       console.error("Polling error:", error);
@@ -40,7 +43,7 @@ class RoomDisplay extends React.Component {
       return;
     }
     this.fetchRoomData();
-    this.intervalId = setInterval(this.fetchRoomData, 3000);
+    this.intervalId = setInterval(this.fetchRoomData, 500);
   }
 
   componentWillUnmount() {

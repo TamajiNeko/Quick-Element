@@ -52,9 +52,9 @@ export async function POST(request) {
       const playerA = await playerCookieService.getCookie();
       const playerB = "Waiting..."
       const generateRoomCode = new CodeGenerator();
-      const id = generateRoomCode.generate(6);
+      const id = await generateRoomCode.generate(6);
       const roomCookieService = new CookieService('room');
-      await roomCookieService.setCookie(id); 
+      roomCookieService.setCookie(id); 
 
       let query = `insert into ${tableName} (id, playerA, playerB, BReady) VALUES (?, ?, ?, 2)`;
       const values = [id, playerA, playerB];
