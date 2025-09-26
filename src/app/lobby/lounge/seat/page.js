@@ -1,4 +1,3 @@
-import FullScreenButton from "../../../../../componets/FullScreenButton";
 import ClientPage from './ClientPage';
 import LobbyRouter from '../../../../../lib/LobbyRouter';
 import BackButton from '../../../../../componets/BackButton';
@@ -21,7 +20,6 @@ export default async function Page() {
     <>
       <ClientPage username={username} room={room}/>
       <BackButton function_={Leave}/>
-      <FullScreenButton/>
     </>
   );
 }

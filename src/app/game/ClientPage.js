@@ -1,9 +1,6 @@
 "use client";
 
 import React from "react";
-import UserNamePlate from "../../../../../componets/UserNamePlate";
-import RoomCodePlate from "../../../../../componets/RoomCodePlate";
-import ReadyForm from "./ReadyForm";
 
 class RoomDisplay extends React.Component {
   constructor(props) {
@@ -19,14 +16,22 @@ class RoomDisplay extends React.Component {
   async fetchRoomData() {
     const { room } = this.props;
     try {
-      const res = await fetch(`/api/room?get_room=${room}`);
-      if (!res.ok) {
-        throw new Error("Room Not Found in Server");
+      let response = await fetch(`/api/map_data?get_map=${room}`);
+
+      if (!response.ok) {
+        const fallback = await fetch(`/api/room?get_room=${room}`);
+        if (!fallback.ok) {
+          throw new Error("Room Not Found in Server");
+        }
+
+        await fetch("/api/map_data?make=true", {
+          method: "POST"
+        });
+
+        response = fallback;
       }
-      const data = await res.json();
-      if (data.AReady == 1 && data.BReady == 1) {
-        window.location.href = "/game";
-      }
+
+      const data = await response.json();
       this.setState({ roomData: data });
     } catch (error) {
       console.error("Polling error:", error);
@@ -38,7 +43,7 @@ class RoomDisplay extends React.Component {
 
   componentDidMount() {
     const { room } = this.props;
-    if (!room || room === "N/A") {
+    if (!room) {
       this.setState({ loading: false });
       return;
     }
@@ -53,23 +58,18 @@ class RoomDisplay extends React.Component {
   }
 
   render() {
-    const { username, room } = this.props;
     const { roomData, loading } = this.state;
 
     return (
       <main>
-        <UserNamePlate username={username} />
-        <RoomCodePlate code={room} />
         <div className="flex flex-col justify-center items-center h-screen">
           {loading ? (
             <p className="text-[1.5rem]">Loading...</p>
           ) : roomData ? (
-            <ReadyForm username={username} playerA={roomData.playerA} playerB={roomData.playerB}
-              readyStatsA={roomData.AReady} readyStatsB={roomData.BReady} />
+            <p className="text-[1.45rem]">Server Works, But i've no passion to continue yet :/</p>
           ) : (
-              <p className="text-[1.45rem]">Room not found ｡°(°¯᷄◠¯᷅°)°｡</p>
-          )
-          }
+            <p className="text-[1.45rem]">Room not found ｡°(°¯᷄◠¯᷅°)°｡</p>
+          )}
         </div>
       </main>
     );

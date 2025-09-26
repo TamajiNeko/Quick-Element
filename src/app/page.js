@@ -1,8 +1,6 @@
 'use client';
 
 import Link from "next/link";
-import FullScreenButton from "../../componets/FullScreenButton";
-
 import { useState, useEffect } from 'react';
 
 export default function Page() {
@@ -19,7 +17,6 @@ export default function Page() {
           <p className="touchStart text-[1.5rem] bottom-[2rem] absolute font-medium text-white">Click to Start</p>
         </div>
       </Link>
-      <FullScreenButton/>
     </main>
   );
 }

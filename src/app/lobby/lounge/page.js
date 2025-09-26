@@ -1,5 +1,4 @@
 import lobbyRouter from "../../../../lib/LobbyRouter";
-import FullScreenButton from "../../../../componets/FullScreenButton";
 import UserNamePlateWithEdit from "../../../../componets/UserNamePlateWithEdit";
 import RoomCodeForm from "./EnterRoomForm";
 import { setRoomID } from "./Actions";
@@ -21,7 +20,6 @@ export default async function Page() {
       <div className="flex flex-col justify-center items-center h-screen">
         <RoomCodeForm setRoomID={setRoomID}/>
       </div>
-      <FullScreenButton/>
     </>
   );
 }

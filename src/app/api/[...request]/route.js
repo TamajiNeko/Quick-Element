@@ -12,15 +12,21 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Table name is missing from the URL.' }, { status: 400 });
   }
 
-  const get = searchParams.get('get');
+  const getRoom = searchParams.get('get_room');
+  const getMap = searchParams.get('get_map');
 
   try {
     const db = await pool.getConnection();
-    let query = `SELECT * FROM ${tableName}`;
+    let query = `select * from ${tableName}`;
 
-    if (get) {
-      query += ` WHERE id = ?`;
-      const [rows] = await db.execute(query, [get]);
+    if (getRoom) {
+      query += ` where id = ?`;
+      const [rows] = await db.execute(query, [getRoom]);
+      db.release();
+      return NextResponse.json(rows[0]);
+    }else if (getMap) {
+      query += ` inner join room where room_id = ?`;
+      const [rows] = await db.execute(query, [getMap]);
       db.release();
       return NextResponse.json(rows[0]);
     }
@@ -39,9 +45,10 @@ export async function POST(request) {
   }
 
   const create = searchParams.get('create');
+  const makeRoom = searchParams.get('make');
   const remove = searchParams.get('remove');
   const join = searchParams.get('join');
-    const leave = searchParams.get('leave');
+  const leave = searchParams.get('leave');
   const ready = searchParams.get('ready');
 
   try {
@@ -61,8 +68,20 @@ export async function POST(request) {
 
       await db.execute(query, values);
       db.release();
-      return NextResponse.json({ id }, { status: 201 });
-    } else if (join) {
+        return NextResponse.json({ id }, { status: 201 });
+    }else if (makeRoom) {
+      const roomCookieService = new CookieService('room');
+      const room = await roomCookieService.getCookie(); 
+      const turn = `player${Math.random() < 0.5 ? "A" : "B"}`;
+
+      let query = `INSERT INTO ${tableName} (room_id, turn) VALUES (?, ?)`;
+      const values = [room, turn];
+
+      const [result] = await db.execute(query, values);
+      db.release();
+
+      return NextResponse.json({ id: result.insertId }, { status: 201 });
+    }else if (join) {
       const playerCookieService = new CookieService('username');
       const roomCookieService = new CookieService('room');
       const playerB = await playerCookieService.getCookie();
