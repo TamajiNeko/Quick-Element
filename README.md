@@ -1,7 +1,7 @@
 ![](resoucre/banner.png)
 <h1 align="center">Quick Element</h1>
 
-**Quick Element** is an Web based card game inspired by **Dominoes** and **Uno**. The core theme of the game is about forming chemical bonds between different elements.
+**Quick Element** is an Web based card game inspired by ~~Dominoes and Uno~~ Crossword. The core theme of the game is about forming chemical bonds between different elements.
 
 ## Objective
 The goal is to teach players about chemical bonding through a fun and accessible game format. By borrowing mechanics from popular games like **Uno** and **Dominoes**, it’s a perfect fit for players of all ages and backgrounds.
