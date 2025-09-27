@@ -14,6 +14,7 @@ export async function GET(request) {
 
   const getRoom = searchParams.get('get_room');
   const getMap = searchParams.get('get_map');
+  const getElement = searchParams.get('element');
 
   try {
     const db = await pool.getConnection();
@@ -27,6 +28,17 @@ export async function GET(request) {
     }else if (getMap) {
       query += ` inner join room where room_id = ?`;
       const [rows] = await db.execute(query, [getMap]);
+      db.release();
+      return NextResponse.json(rows[0]);
+    }else if (getElement) {
+      let elementId = parseInt(getElement, 10);
+      if (isNaN(elementId)) {
+        elementId = getElement
+        query += ` where element = ?`;
+      } else {
+        query += ` where id = ?`;
+      }
+      const [rows] = await db.execute(query, [elementId]);
       db.release();
       return NextResponse.json(rows[0]);
     }
@@ -45,7 +57,8 @@ export async function POST(request) {
   }
 
   const create = searchParams.get('create');
-  const makeRoom = searchParams.get('make');
+  const createMap = searchParams.get('create_map');
+  const set = searchParams.get('set')
   const remove = searchParams.get('remove');
   const join = searchParams.get('join');
   const leave = searchParams.get('leave');
@@ -68,19 +81,21 @@ export async function POST(request) {
 
       await db.execute(query, values);
       db.release();
-        return NextResponse.json({ id }, { status: 201 });
-    }else if (makeRoom) {
+      return NextResponse.json({ status: 201 });
+    }else if (createMap) {
+      const mapData = await request.json();
+      const jsonMapData = JSON.stringify(mapData);
       const roomCookieService = new CookieService('room');
       const room = await roomCookieService.getCookie(); 
       const turn = `player${Math.random() < 0.5 ? "A" : "B"}`;
 
-      let query = `INSERT INTO ${tableName} (room_id, turn) VALUES (?, ?)`;
-      const values = [room, turn];
+      let query = `INSERT INTO ${tableName} (room_id, turn, map) VALUES (?, ?, ?)`;
+      const values = [room, turn, jsonMapData];
 
-      const [result] = await db.execute(query, values);
+      await db.execute(query, values);
       db.release();
 
-      return NextResponse.json({ id: result.insertId }, { status: 201 });
+      return NextResponse.json({ status: 200 });
     }else if (join) {
       const playerCookieService = new CookieService('username');
       const roomCookieService = new CookieService('room');
@@ -94,40 +109,55 @@ export async function POST(request) {
       db.release();
     } else if (leave) {
       const playerB = "Waiting...";
-      const id = leave;
 
       let query = `update ${tableName} set playerB = ?, BReady = 2 where id = ?`;
-      const values = [playerB, id];
+      const values = [playerB, leave];
 
       await db.execute(query, values);
       db.release();
-      return NextResponse.json({ leaving: id }, { status: 200 });
+      return NextResponse.json({ status: 200 });
     } else if (ready) {
-      const position = ready;
 
       const roomCookieService = new CookieService('room');
       const id = await roomCookieService.getCookie();
 
-      if (!position) {
+      if (!ready) {
         return NextResponse.json({ error: 'Position is required' }, { status: 400 });
       }
 
-      const query = `update ${tableName} set ${position} = true where id = ?`;
+      const query = `update ${tableName} set ${ready} = true where id = ?`;
       const values = [id];
 
       await db.execute(query, values);
       db.release();
-      return NextResponse.json({ position: 'Is Ready' }, { status: 200 });
+      return NextResponse.json({ status: 200 });
+    } else if (set) {
+      const data = await request.json();
+      const roomCookieService = new CookieService('room');
+      const id = await roomCookieService.getCookie();
+      const element = data.element;
+      const value = data.value;
+      const coordinate = data.coordinate;
+
+      const query = `update ${tableName} set map = json_set
+                    ( map,
+                      '${'$.' + coordinate + '.element'}', ?,
+                      '${'$.' + coordinate + '.value'}', ?
+                    )
+                    where room_id = ?`;
+      const values = [element, value, id];
+      await db.execute(query, values);
+      db.release();
+      return NextResponse.json({ status: 200 });
     } else if (remove) {
-      const id = remove; 
       
-      if (!id) {
+      if (!remove) {
         return NextResponse.json({ error: 'ID is required to remove an entry.' }, { status: 400 });
       }
 
       const query = `delete from ${tableName} where id = ?`;
-      await db.execute(query, [id]);
-      return NextResponse.json({ removed: id }, { status: 200 });
+      await db.execute(query, [remove]);
+      return NextResponse.json({ status: 200 });
     } else {
       db.release();
       return NextResponse.json({ error: "Query parameter is required." }, { status: 400 });

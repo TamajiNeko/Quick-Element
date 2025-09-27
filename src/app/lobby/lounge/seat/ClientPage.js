@@ -43,7 +43,7 @@ class RoomDisplay extends React.Component {
       return;
     }
     this.fetchRoomData();
-    this.intervalId = setInterval(this.fetchRoomData, 3000);
+    this.intervalId = setInterval(this.fetchRoomData, 500);
   }
 
   componentWillUnmount() {
@@ -67,7 +67,7 @@ class RoomDisplay extends React.Component {
             <ReadyForm username={username} playerA={roomData.playerA} playerB={roomData.playerB}
               readyStatsA={roomData.AReady} readyStatsB={roomData.BReady} />
           ) : (
-              <p className="text-[1.45rem]">Room not found ｡°(°¯᷄◠¯᷅°)°｡</p>
+              <p className="text-[1.45rem]">404 | Room not found ｡°(°¯᷄◠¯᷅°)°｡</p>
           )
           }
         </div>
