@@ -190,11 +190,19 @@ export default class mapDisplay extends React.Component {
                     rowCells.push(
                         <div 
                             key={key} 
-                            onClick={() => console.log('Clicked cell:', key)} 
-                            className="board-cell border p-1 w-[200px] h-[250px] flex flex-col justify-center items-center text-center text-xs bg-gray-100"
+                            className="board-cell p-1 w-[180px] h-[265px] flex flex-col justify-center items-center text-center text-xs"
                         >
-                            <span className="font-light text-[0.6rem] text-gray-500">{key}</span> 
-                            <span className="text-lg font-bold text-black">{cellData?.element || cellData?.value || ''}</span>
+                            {cellData?.element ? (
+                                <img 
+                                    src={`cards/${cellData.element}.png`} 
+                                    alt={cellData.element} 
+                                    className="object-contain" 
+                                />
+                            ) : (
+                                <span className="text-lg font-bold text-black">
+                                    {cellData?.value || ''}
+                                </span>
+                            )}
                         </div>
                     );
                 }

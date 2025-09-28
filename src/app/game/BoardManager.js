@@ -13,6 +13,7 @@ export default class boardManager {
 
                 boardData[gridKey] = {
                     "element": "",
+                    "parent": "",
                     "value": null
                 };
             }
@@ -23,7 +24,7 @@ export default class boardManager {
 
     prepareGame = async () => {
         try {
-            let start = await fetch(`/api/element_lib?element=${Math.floor(Math.random() * (15 - 1 + 1)) + 1}`);
+            let start = await fetch(`/api/element_lib?element=${Math.floor(Math.random() * (38 - 1 + 1)) + 1}`);
 
             if (!start.ok) {
                 throw new Error("Room Not Found in Server");
