@@ -32,7 +32,7 @@ export default class boardManager {
 
             const data = await start.json();
             data.coordinate = 'E8';
-            await fetch(`/api/map_data?set=true`, {
+            await fetch(`/api/map_data?set=start`, {
                 method: "POST",
                 body: JSON.stringify(data)
             });

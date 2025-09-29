@@ -31,7 +31,6 @@ export default class mapDisplay extends React.Component {
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.centerScroll = this.centerScroll.bind(this);
     }
-    // --- Data Fetching Logic ---
 
     async fetchmapData() {
         const { room } = this.props;
@@ -194,8 +193,9 @@ export default class mapDisplay extends React.Component {
                         >
                             {cellData?.element ? (
                                 <img 
-                                    src={`cards/${cellData.element}.png`} 
-                                    alt={cellData.element} 
+                                    src={`cards/${cellData.element}.svg`} 
+                                    alt={cellData.element}
+                                    draggable="false"
                                     className="object-contain" 
                                 />
                             ) : (

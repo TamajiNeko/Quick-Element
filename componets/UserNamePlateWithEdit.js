@@ -14,7 +14,7 @@ export default function UserNamePlateWithEdit({ username }) {
       onClick={handleDeleteUsername}
     >
       <p className="text-[1.5rem]">{username || 'N/A'}</p>
-      <img src="/pen.svg" className="w-[1.5rem] h-[1.5rem]" alt="Edit or Delete Username"></img>
+      <img src="/pen.svg" draggable="false" className="w-[1.5rem] h-[1.5rem]" alt="Edit or Delete Username"></img>
     </div>
   );
 }

@@ -135,20 +135,92 @@ export async function POST(request) {
       const data = await request.json();
       const roomCookieService = new CookieService('room');
       const id = await roomCookieService.getCookie();
+      const coordinate = data.coordinate;
       const element = data.element;
       const value = data.value;
-      const coordinate = data.coordinate;
 
-      const query = `update ${tableName} set map = json_set
-                    ( map,
-                      '${'$.' + coordinate + '.element'}', ?,
-                      '${'$.' + coordinate + '.value'}', ?
-                    )
-                    where room_id = ?`;
-      const values = [element, value, id];
-      await db.execute(query, values);
-      db.release();
-      return NextResponse.json({ status: 200 });
+      if (set === 'place') {
+        const parent = data.parent
+        if (parent) {
+          const query = `update ${tableName} set map = json_set
+              ( map,
+                '${'$.' + coordinate + '.parent'}', ?,
+                '${'$.' + coordinate + '.value'}', ?
+              )
+              where room_id = ?`;
+          const values = [element, value, id];
+          await db.execute(query, values);
+        } else {
+          const query = `update ${tableName} set map = json_set
+              ( map,
+                '${'$.' + coordinate + '.element'}', ?,
+                '${'$.' + coordinate + '.value'}', ?
+              )
+              where room_id = ?`;
+          const values = [element, value, id];
+          await db.execute(query, values);
+        }
+        db.release();
+        return NextResponse.json({ status: 200 });
+      } else if (set === 'start') {
+        const col = parseInt(coordinate.substring(1), 10);
+        const rowChar = coordinate.charAt(0);
+        const rowIndex = rowChar.charCodeAt(0);
+        const offsets = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
+        let jsonPaths = [];
+        let queryValues = [];
+
+        jsonPaths.push(`'${'$.' + coordinate + '.element'}', ?`);
+        queryValues.push(element);
+        
+        jsonPaths.push(`'${'$.' + coordinate + '.value'}', ?`);
+        queryValues.push(value);
+
+        for (const [rOffset, cOffset] of offsets) {
+            const newRowIndex = rowIndex + rOffset;
+            const newCol = col + cOffset;
+            
+            if (newRowIndex >= 'A'.charCodeAt(0) && newRowIndex <= 'I'.charCodeAt(0) && 
+                newCol >= 1 && newCol <= 15) {
+                
+                const newCoord = String.fromCharCode(newRowIndex) + newCol;
+                
+                jsonPaths.push(`'${'$.' + newCoord + '.value'}', ?`);
+                queryValues.push(value); 
+                
+                jsonPaths.push(`'${'$.' + newCoord + '.parent'}', ?`);
+                queryValues.push(element); 
+            }
+        }
+
+        const jsonSetString = jsonPaths.join(',\n');
+        
+        const query = `
+            UPDATE ${tableName} 
+            SET 
+                map = JSON_SET(
+                    map,
+                    ${jsonSetString} 
+                )
+            WHERE 
+                room_id = ?`;
+
+        queryValues.push(id); 
+
+        await db.execute(query, queryValues);
+        db.release();
+        return NextResponse.json({ status: 200 });
+        } else if (remove) {
+          
+          if (!remove) {
+            return NextResponse.json({ error: 'ID is required to remove an entry.' }, { status: 400 });
+          }
+
+          const query = `delete from ${tableName} where id = ?`;
+          await db.execute(query, [remove]);
+          return NextResponse.json({ status: 200 });
+      }
     } else if (remove) {
       
       if (!remove) {
