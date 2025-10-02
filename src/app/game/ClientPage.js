@@ -198,10 +198,11 @@ export default class mapDisplay extends React.Component {
                                     draggable="false"
                                     className="object-contain" 
                                 />
-                            ) : (
-                                <span className="text-lg font-bold text-black">
-                                    {cellData?.value || ''}
+                            ) : cellData?.value ? (
+                                <span className="w-[180px] h-[265px]" onClick={() => console.log(cellData.value)}>
                                 </span>
+                            ) : (
+                                <></>
                             )}
                         </div>
                     );

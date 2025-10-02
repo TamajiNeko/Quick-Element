@@ -139,88 +139,87 @@ export async function POST(request) {
       const element = data.element;
       const value = data.value;
 
-      if (set === 'place') {
-        const parent = data.parent
-        if (parent) {
-          const query = `update ${tableName} set map = json_set
-              ( map,
-                '${'$.' + coordinate + '.parent'}', ?,
-                '${'$.' + coordinate + '.value'}', ?
-              )
-              where room_id = ?`;
-          const values = [element, value, id];
-          await db.execute(query, values);
-        } else {
-          const query = `update ${tableName} set map = json_set
-              ( map,
-                '${'$.' + coordinate + '.element'}', ?,
-                '${'$.' + coordinate + '.value'}', ?
-              )
-              where room_id = ?`;
-          const values = [element, value, id];
-          await db.execute(query, values);
-        }
-        db.release();
-        return NextResponse.json({ status: 200 });
-      } else if (set === 'start') {
-        const col = parseInt(coordinate.substring(1), 10);
-        const rowChar = coordinate.charAt(0);
-        const rowIndex = rowChar.charCodeAt(0);
-        const offsets = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+      let jsonPaths = [];
+      let queryValues = [];
 
-        let jsonPaths = [];
-        let queryValues = [];
-
-        jsonPaths.push(`'${'$.' + coordinate + '.element'}', ?`);
-        queryValues.push(element);
-        
-        jsonPaths.push(`'${'$.' + coordinate + '.value'}', ?`);
-        queryValues.push(value);
-
-        for (const [rOffset, cOffset] of offsets) {
-            const newRowIndex = rowIndex + rOffset;
-            const newCol = col + cOffset;
-            
-            if (newRowIndex >= 'A'.charCodeAt(0) && newRowIndex <= 'I'.charCodeAt(0) && 
-                newCol >= 1 && newCol <= 15) {
-                
-                const newCoord = String.fromCharCode(newRowIndex) + newCol;
-                
-                jsonPaths.push(`'${'$.' + newCoord + '.value'}', ?`);
-                queryValues.push(value); 
-                
-                jsonPaths.push(`'${'$.' + newCoord + '.parent'}', ?`);
-                queryValues.push(element); 
-            }
-        }
-
-        const jsonSetString = jsonPaths.join(',\n');
-        
-        const query = `
-            UPDATE ${tableName} 
-            SET 
-                map = JSON_SET(
-                    map,
-                    ${jsonSetString} 
-                )
-            WHERE 
-                room_id = ?`;
-
-        queryValues.push(id); 
-
-        await db.execute(query, queryValues);
-        db.release();
-        return NextResponse.json({ status: 200 });
-        } else if (remove) {
+      const collectUpdates = (coord, newValue, isClearing = false) => {
+          const col = parseInt(coord.substring(1), 10);
+          const rowChar = coord.charAt(0);
+          const rowIndex = rowChar.charCodeAt(0);
+          const offsets = [[0, 1], [0, -1], [1, 0], [-1, 0]];
           
-          if (!remove) {
-            return NextResponse.json({ error: 'ID is required to remove an entry.' }, { status: 400 });
+          const elementToSet = isClearing ? "" : element;
+          const parentForNeighbors = isClearing ? "" : element;
+
+          jsonPaths.push(`'${'$.' + coord + '.element'}', ?`);
+          queryValues.push(elementToSet);
+          
+          jsonPaths.push(`'${'$.' + coord + '.value'}', ?`);
+          queryValues.push(newValue);
+
+          jsonPaths.push(`'${'$.' + coord + '.parent'}', ?`);
+          queryValues.push(""); 
+
+          for (const [rOffset, cOffset] of offsets) {
+              const newRowIndex = rowIndex + rOffset;
+              const newCol = col + cOffset;
+              
+              if (newRowIndex >= 'A'.charCodeAt(0) && newRowIndex <= 'I'.charCodeAt(0) && 
+                  newCol >= 1 && newCol <= 15) {
+                  
+                  const newCoord = String.fromCharCode(newRowIndex) + newCol;
+                  
+                  jsonPaths.push(`'${'$.' + newCoord + '.value'}', ?`);
+                  queryValues.push(newValue); 
+                  
+                  jsonPaths.push(`'${'$.' + newCoord + '.parent'}', ?`);
+                  queryValues.push(parentForNeighbors);
+              }
+          }
+      }
+
+      if (set === 'place') {
+          let board = await fetch(`http://localhost/api/map_data?get_map=${id}`);
+          
+          if (!board.ok) {
+              throw new Error("Room Not Found in Server");
           }
 
-          const query = `delete from ${tableName} where id = ?`;
-          await db.execute(query, [remove]);
-          return NextResponse.json({ status: 200 });
+          const boardData = await board.json();
+          const parentCoord = boardData.map[coordinate].parent;
+
+          if (parentCoord !== "" && parentCoord !== null) { 
+            const parentValue = boardData.map[coordinate].value;
+            let resultValue = value - parentValue;
+          
+            if (resultValue === 0) {
+              collectUpdates(coordinate, 0, true); 
+              collectUpdates(parentCoord, 0, true); 
+              
+            } else if (resultValue > 0) {
+              collectUpdates(coordinate, 0, false); 
+              collectUpdates(parentCoord, resultValue, false); 
+              
+            } else if (resultValue < 0) {
+              collectUpdates(coordinate, resultValue, false); 
+              collectUpdates(parentCoord, 0, false); 
+            }
+          }
+      } else if (set === 'start') {
+          collectUpdates(coordinate, value, false); 
       }
+      
+      const jsonSetString = jsonPaths.join(',\n');
+      
+      const query = `
+          UPDATE ${tableName} 
+          SET map = JSON_SET(map, ${jsonSetString})
+          WHERE room_id = ?`;
+
+      queryValues.push(id); 
+      await db.execute(query, queryValues);
+      db.release();
+      return NextResponse.json({ status: 200 });
     } else if (remove) {
       
       if (!remove) {

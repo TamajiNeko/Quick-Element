@@ -1,4 +1,4 @@
-export default class boardManager {
+export default class boardManager{
     createInitialGameBoardJSON = () => {
         const boardData = {};
         
