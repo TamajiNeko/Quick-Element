@@ -86,11 +86,43 @@ export async function POST(request) {
       const mapData = await request.json();
       const jsonMapData = JSON.stringify(mapData);
       const roomCookieService = new CookieService('room');
-      const room = await roomCookieService.getCookie(); 
+      const room = "4x148j";//await roomCookieService.getCookie(); 
       const turn = `player${Math.random() < 0.5 ? "A" : "B"}`;
 
-      let query = `INSERT INTO ${tableName} (room_id, turn, map) VALUES (?, ?, ?)`;
-      const values = [room, turn, jsonMapData];
+      const generateCardID = new CodeGenerator();
+
+      let handA = {};
+      let handB = {};
+
+      let query = `INSERT INTO ${tableName} (room_id, turn, map, handA, handB) VALUES (?, ?, ?, ?, ?)`;
+      
+      const handStarter = async(player) => {
+        for (let i = 5; i>0; i--) {
+
+          let card = await fetch(`http://localhost:3000/api/element_lib?element=${Math.floor(Math.random() * (38 - 1 + 1)) + 1}`)
+          
+          if (!card.ok) {
+              throw new Error("Element Not Found in Server");
+          };
+
+          const data = await card.json();
+
+          player[data.element] = {
+              "id": await generateCardID.generate(4),
+              "max_value": data.value,
+              "value": data.value
+          };
+
+        }
+      }
+      
+      await handStarter(handA);
+      await handStarter(handB);
+
+      const jsonHandA = JSON.stringify(handA);
+      const jsonHandB = JSON.stringify(handB);
+
+      const values = [room, turn, jsonMapData, jsonHandA, jsonHandB];
 
       await db.execute(query, values);
       db.release();
@@ -134,7 +166,7 @@ export async function POST(request) {
     } else if (set) {
       const data = await request.json();
       const roomCookieService = new CookieService('room');
-      const id = await roomCookieService.getCookie();
+      const id = "4x148j"//await roomCookieService.getCookie();
       const coordinate = data.coordinate;
       const element = data.element;
       const value = data.value;
@@ -142,14 +174,14 @@ export async function POST(request) {
       let jsonPaths = [];
       let queryValues = [];
 
-      const collectUpdates = (coord, newValue, isClearing = false) => {
+      const collectUpdates = (coord, newValue, isParent = false, isClear = false, parentElement = "") => {
           const col = parseInt(coord.substring(1), 10);
           const rowChar = coord.charAt(0);
           const rowIndex = rowChar.charCodeAt(0);
           const offsets = [[0, 1], [0, -1], [1, 0], [-1, 0]];
           
-          const elementToSet = isClearing ? "" : element;
-          const parentForNeighbors = isClearing ? "" : element;
+          const elementToSet = isParent ? parentElement : element;
+          const parentForNeighbors = isClear ? "" : coord;
 
           jsonPaths.push(`'${'$.' + coord + '.element'}', ?`);
           queryValues.push(elementToSet);
@@ -177,34 +209,36 @@ export async function POST(request) {
               }
           }
       }
-
       if (set === 'place') {
-          let board = await fetch(`http://localhost/api/map_data?get_map=${id}`);
+        let board = await fetch(`http://localhost:3000/api/map_data?get_map=${id}`);
           
-          if (!board.ok) {
-              throw new Error("Room Not Found in Server");
-          }
+        if (!board.ok) {
+            throw new Error("Room Not Found in Server");
+        }
 
-          const boardData = await board.json();
-          const parentCoord = boardData.map[coordinate].parent;
+        const boardData = await board.json();
+        const parentCoord = boardData.map[coordinate].parent;
 
-          if (parentCoord !== "" && parentCoord !== null) { 
-            const parentValue = boardData.map[coordinate].value;
-            let resultValue = value - parentValue;
-          
-            if (resultValue === 0) {
-              collectUpdates(coordinate, 0, true); 
-              collectUpdates(parentCoord, 0, true); 
-              
-            } else if (resultValue > 0) {
-              collectUpdates(coordinate, 0, false); 
-              collectUpdates(parentCoord, resultValue, false); 
-              
-            } else if (resultValue < 0) {
-              collectUpdates(coordinate, resultValue, false); 
-              collectUpdates(parentCoord, 0, false); 
-            }
+        if (parentCoord !== "" && parentCoord !== null) { 
+          const parentValue = boardData.map[coordinate].value;
+          const parentElement = boardData.map[parentCoord].element;
+          let resultValue = value - parentValue;
+
+          console.log(resultValue)
+        
+          if (resultValue === 0) {
+            collectUpdates(coordinate, 0, false, true); 
+            collectUpdates(parentCoord, 0, true, true, parentElement); 
+            
+          } else if (resultValue < 0) {
+            collectUpdates(coordinate, 0, false, true); 
+            collectUpdates(parentCoord, Math.abs(resultValue), true, false,parentElement); 
+            
+          } else if (resultValue > 0) {
+            collectUpdates(coordinate, resultValue, false); 
+            collectUpdates(parentCoord, 0, true, true, parentElement); 
           }
+        }
       } else if (set === 'start') {
           collectUpdates(coordinate, value, false); 
       }
@@ -217,6 +251,7 @@ export async function POST(request) {
           WHERE room_id = ?`;
 
       queryValues.push(id); 
+      
       await db.execute(query, queryValues);
       db.release();
       return NextResponse.json({ status: 200 });

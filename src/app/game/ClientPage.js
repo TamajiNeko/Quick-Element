@@ -199,8 +199,12 @@ export default class mapDisplay extends React.Component {
                                     className="object-contain" 
                                 />
                             ) : cellData?.value ? (
-                                <span className="w-[180px] h-[265px]" onClick={() => console.log(cellData.value)}>
-                                </span>
+                                <img 
+                                    src={`place holder.png`} 
+                                    alt={cellData.element}
+                                    draggable="false"
+                                    className="object-contain" 
+                                />
                             ) : (
                                 <></>
                             )}
