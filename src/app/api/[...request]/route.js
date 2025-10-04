@@ -15,6 +15,7 @@ export async function GET(request) {
   const getRoom = searchParams.get('get_room');
   const getMap = searchParams.get('get_map');
   const getElement = searchParams.get('element');
+  const getHand = searchParams.get('hand');
 
   try {
     const db = await pool.getConnection();
@@ -25,6 +26,32 @@ export async function GET(request) {
       const [rows] = await db.execute(query, [getRoom]);
       db.release();
       return NextResponse.json(rows[0]);
+    }else if (getMap && getHand) {
+      const playerName = getHand.slice(1);
+      const type = parseInt(getHand.slice(0, 1), 10);
+      const map = await fetch(`http://localhost:3000/api/map_data?get_map=${getMap}`)
+      
+      if (!map.ok) {
+          throw new Error("Map Not Found in Server");
+      };
+
+      const mapData = await map.json();
+      let response = {}
+
+      if (type === 1) {
+        if (playerName === mapData.playerA){
+          response = mapData.handA
+        }else {
+          response = mapData.handB
+        }
+      } else {
+        if (playerName === mapData.playerA){
+          response = mapData.handB
+        }else {
+          response = mapData.handA
+        }
+      }
+      return NextResponse.json(response);
     }else if (getMap) {
       query += ` inner join room where room_id = ?`;
       const [rows] = await db.execute(query, [getMap]);
@@ -86,7 +113,7 @@ export async function POST(request) {
       const mapData = await request.json();
       const jsonMapData = JSON.stringify(mapData);
       const roomCookieService = new CookieService('room');
-      const room = "4x148j";//await roomCookieService.getCookie(); 
+      const room = await roomCookieService.getCookie(); 
       const turn = `player${Math.random() < 0.5 ? "A" : "B"}`;
 
       const generateCardID = new CodeGenerator();
@@ -99,7 +126,7 @@ export async function POST(request) {
       const handStarter = async(player) => {
         for (let i = 5; i>0; i--) {
 
-          let card = await fetch(`http://localhost:3000/api/element_lib?element=${Math.floor(Math.random() * (38 - 1 + 1)) + 1}`)
+          const card = await fetch(`http://localhost:3000/api/element_lib?element=${Math.floor(Math.random() * (38 - 1 + 1)) + 1}`)
           
           if (!card.ok) {
               throw new Error("Element Not Found in Server");
@@ -166,7 +193,7 @@ export async function POST(request) {
     } else if (set) {
       const data = await request.json();
       const roomCookieService = new CookieService('room');
-      const id = "4x148j"//await roomCookieService.getCookie();
+      const id = await roomCookieService.getCookie();
       const coordinate = data.coordinate;
       const element = data.element;
       const value = data.value;
@@ -192,6 +219,11 @@ export async function POST(request) {
           jsonPaths.push(`'${'$.' + coord + '.parent'}', ?`);
           queryValues.push(""); 
 
+          if (!isParent) {
+            jsonPaths.push(`'${'$.' + coord + '.bond'}', ?`);
+            queryValues.push(value);
+          }
+
           for (const [rOffset, cOffset] of offsets) {
               const newRowIndex = rowIndex + rOffset;
               const newCol = col + cOffset;
@@ -210,7 +242,7 @@ export async function POST(request) {
           }
       }
       if (set === 'place') {
-        let board = await fetch(`http://localhost:3000/api/map_data?get_map=${id}`);
+        const board = await fetch(`http://localhost:3000/api/map_data?get_map=${id}`);
           
         if (!board.ok) {
             throw new Error("Room Not Found in Server");

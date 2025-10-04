@@ -2,8 +2,7 @@
 
 import React from "react";
 import boardManager from "./BoardManager"; 
-import { Leave } from "../../../lib/Leave";
-import BackButton_ from "../../../componets/BackButton";
+import PlayerHand from "../../../componets/PlayerHand"; 
 
 export default class mapDisplay extends React.Component {
     constructor(props) {
@@ -12,20 +11,17 @@ export default class mapDisplay extends React.Component {
             mapData: null,
             loading: true,
             
-            // สถานะสำหรับการคลิ๊กลาก
             isDragging: false,
             startX: 0,
             startY: 0,
             scrollLeft: 0,
             scrollTop: 0,
-            // Flag ใหม่: ตรวจจับว่ามีการลากเกิน threshold (ระยะที่กำหนด) แล้วหรือไม่
             isDragDetected: false, 
         };
         this.intervalId = null;
         this.fetchmapData = this.fetchmapData.bind(this);
         this.scrollContainerRef = React.createRef(); 
         
-        // ผูก Methods สำหรับการลาก
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
@@ -51,7 +47,7 @@ export default class mapDisplay extends React.Component {
 
                 response = await fetch(`/api/map_data?get_map=${room}`);
                 if (!response.ok) {
-                   response = fallback; 
+                    response = fallback; 
                 }
                 new boardManager().prepareGame();
             }
@@ -73,7 +69,9 @@ export default class mapDisplay extends React.Component {
             return;
         }
         this.fetchmapData();
-        this.intervalId = setInterval(this.fetchmapData, 500);
+        document.addEventListener('mouseup', this.handleMouseUp);
+        document.addEventListener('mousemove', this.handleMouseMove);
+        this.intervalId = setInterval(this.fetchmapData, 2000);
     }
     
     componentDidUpdate(prevProps, prevState) {
@@ -86,22 +84,21 @@ export default class mapDisplay extends React.Component {
         if (this.intervalId) {
             clearInterval(this.intervalId);
         }
+        document.removeEventListener('mouseup', this.handleMouseUp);
+        document.removeEventListener('mousemove', this.handleMouseMove);
         document.body.style.userSelect = 'auto'; 
     }
-
-    // --- Drag-to-Scroll Handlers (AI Generated) ---
 
     handleMouseDown(e) {
         if (!this.scrollContainerRef.current) return;
 
-        // ตรวจสอบว่าผู้ใช้คลิกซ้ายหรือไม่ (button 0) เพื่อไม่ให้กระทบกับการคลิกขวา
         if (e.button !== 0) return; 
 
         this.setState({
             isDragging: true,
-            isDragDetected: false, // รีเซ็ตการตรวจจับการลาก
-            startX: e.pageX - this.scrollContainerRef.current.offsetLeft,
-            startY: e.pageY - this.scrollContainerRef.current.offsetTop,
+            isDragDetected: false, 
+            startX: e.pageX, 
+            startY: e.pageY,
             scrollLeft: this.scrollContainerRef.current.scrollLeft,
             scrollTop: this.scrollContainerRef.current.scrollTop,
         });
@@ -111,44 +108,33 @@ export default class mapDisplay extends React.Component {
     handleMouseMove(e) {
         if (!this.state.isDragging || !this.scrollContainerRef.current) return;
 
-        const x = e.pageX - this.scrollContainerRef.current.offsetLeft;
-        const y = e.pageY - this.scrollContainerRef.current.offsetTop;
+        const x = e.pageX;
+        const y = e.pageY;
         
         const walkX = x - this.state.startX;
         const walkY = y - this.state.startY;
         
         const distance = Math.sqrt(walkX * walkX + walkY * walkY);
-        const DRAG_THRESHOLD = 5; // กำหนดระยะห่างขั้นต่ำ (5 pixels) ที่ถือว่าเป็นการลาก
+        const DRAG_THRESHOLD = 5; 
 
-        // 1. ถ้ามีการลากเกิน Threshold ให้ตั้งค่า isDragDetected เป็น true
         if (distance > DRAG_THRESHOLD && !this.state.isDragDetected) {
             this.setState({ isDragDetected: true });
         }
         
-        // 2. ถ้ามีการลากจริงแล้ว (isDragDetected เป็น true) 
-        // ให้เรียก e.preventDefault() เพื่อบล็อก click event ที่ตามมา
-        // ถ้าเป็นเพียงคลิกสั้นๆ (distance < 5) จะไม่เรียก preventDefault ทำให้ click ทำงานได้
-        if (this.state.isDragDetected) {
-            e.preventDefault(); 
-        }
+        e.preventDefault(); 
 
-        // เลื่อน Scrollbar
         this.scrollContainerRef.current.scrollLeft = this.state.scrollLeft - walkX;
         this.scrollContainerRef.current.scrollTop = this.state.scrollTop - walkY;
     }
 
     handleMouseUp(e) {
-        // เก็บสถานะการลากก่อน reset
+        if (!this.state.isDragging) return;
+        
         const wasDragDetected = this.state.isDragDetected;
 
-        // รีเซ็ตสถานะ
         this.setState({ isDragging: false, isDragDetected: false });
         document.body.style.userSelect = 'auto'; 
 
-        // เทคนิค: ถ้าเป็นการลากจริง (wasDragDetected = true) 
-        // และมีเหตุการณ์เกิดขึ้น (e ไม่ใช่ null จาก onMouseLeave)
-        // ให้ป้องกันการเกิด click event บน element ที่ถูกปล่อยเมาส์ (e.target)
-        // นี่คือการจัดการกับ click event ที่เบราว์เซอร์สร้างขึ้นหลังจาก drag
         if (wasDragDetected && e) {
         }
     }
@@ -169,6 +155,7 @@ export default class mapDisplay extends React.Component {
 
     render() {
         const { mapData, loading } = this.state;
+        const { room, youPlayerName, opponentPlayerName } = this.props; 
         const boardMap = mapData ? mapData.map : null; 
 
         const renderBoard = () => {
@@ -192,19 +179,35 @@ export default class mapDisplay extends React.Component {
                             className="board-cell p-1 w-[180px] h-[265px] flex flex-col justify-center items-center text-center text-xs"
                         >
                             {cellData?.element ? (
-                                <img 
-                                    src={`cards/${cellData.element}.svg`} 
-                                    alt={cellData.element}
-                                    draggable="false"
-                                    className="object-contain" 
-                                />
+                                <div className="h-[258px]">
+                                    <img 
+                                        src={`cards/${cellData.element}.svg`} 
+                                        alt={cellData.element}
+                                        draggable="false"
+                                        className="object-contain" 
+                                    />
+                                    <img 
+                                        src={`bond/${cellData.bond}.svg`} 
+                                        alt={cellData.element}
+                                        draggable="false"
+                                        className="object-contain relative top-[-100%] z-10" 
+                                    />
+                                </div>
                             ) : cellData?.value ? (
+                                <div className="h-[258px]">
                                 <img 
                                     src={`place holder.png`} 
                                     alt={cellData.element}
                                     draggable="false"
                                     className="object-contain" 
                                 />
+                                    <img 
+                                        src={`bond/${cellData.value}_grey.svg`} 
+                                        alt={cellData.element}
+                                        draggable="false"
+                                        className="object-contain relative top-[-132%] z-10 fill-{#515151}" 
+                                    />
+                                </div>
                             ) : (
                                 <></>
                             )}
@@ -228,6 +231,21 @@ export default class mapDisplay extends React.Component {
         
         return (
             <main className="w-screen h-screen">
+                {mapData && (
+                    <>
+                        <PlayerHand 
+                            room={room} 
+                            playerName={youPlayerName} 
+                            type={"you"}
+                        />
+                        <PlayerHand 
+                            room={room} 
+                            playerName={opponentPlayerName} 
+                            type={"opponents"}
+                        />
+                    </>
+                )}
+                
                 <div className="flex flex-col w-full h-full"> 
                     
                     {loading ? (
@@ -239,19 +257,14 @@ export default class mapDisplay extends React.Component {
                         <p className="text-[1.5rem] ">
                             404 | Room not found ｡°(°¯᷄◠¯᷅°)°｡
                         </p>
-                        <BackButton_ function_={Leave('../lobby')}/>
                         </div>
                     ) : (
-                        // Scroll Container
                         <div 
-                            className={"flex-grow overflow-hidden"}
+                            className={"flex-grow overflow-hidden z-0"}
                             ref={this.scrollContainerRef}
                             onMouseDown={this.handleMouseDown}
-                            onMouseUp={this.handleMouseUp}
-                            onMouseLeave={this.handleMouseUp} 
-                            onMouseMove={this.handleMouseMove}
-                        > 
-                            {renderBoard()} 
+                        >
+                            {renderBoard()}
                         </div>
                     )}
                 </div>

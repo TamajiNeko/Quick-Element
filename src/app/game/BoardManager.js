@@ -24,14 +24,15 @@ export default class boardManager{
 
     prepareGame = async () => {
         try {
-            let start = await fetch(`/api/element_lib?element=${Math.floor(Math.random() * (38 - 1 + 1)) + 1}`);
+            const start = await fetch(`/api/element_lib?element=${Math.floor(Math.random() * (38 - 1 + 1)) + 1}`);
 
             if (!start.ok) {
                 throw new Error("Room Not Found in Server");
-            }
+            };
 
             const data = await start.json();
             data.coordinate = 'E8';
+            data.bond = data.value;
             await fetch(`/api/map_data?set=start`, {
                 method: "POST",
                 body: JSON.stringify(data)

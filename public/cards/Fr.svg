@@ -1,11 +1,10 @@
 <svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 768" width="512" height="768">
 	<style>
 		tspan { white-space:pre } 
-		.s0 { fill: #ff0000 } 
+		.s0 { fill: #ef2830 } 
 		.s1 { fill: none;stroke: #2f00ff;paint-order:stroke fill markers;stroke-linecap: square;stroke-miterlimit:100;stroke-width: 24 } 
 		.t2 { font-size: 82px;fill: #000000;font-weight: 600;font-family: "Poppins-SemiBold", "Poppins" } 
 		.t3 { font-size: 20px;line-height: 42px;fill: #000000;font-weight: 600;font-family: "Poppins-SemiBold", "Poppins" } 
-		.t4 { font-size: 150px;fill: #000000;font-weight: 700;font-family: "Poppins-Bold", "Poppins" } 
 	</style>
 	<path id="Rectangle 1 copy" fill-rule="evenodd" class="s0" d="m50.01 0.02h411.98c27.61 0 50 22.38 50 50v667.96c0 27.62-22.39 50-50 50h-411.98c-27.61 0-50-22.38-50-50v-667.96c0-27.62 22.39-50 50-50z"/>
 	<filter id="f0">
@@ -15,14 +14,10 @@
 	</filter>
 	<g id="Card" filter="url(#f0)">
 		<path id="Rectangle 1 copy 2" fill-rule="evenodd" class="s1" d="m50 32h412c9.94 0 18 8.06 18 18v668c0 9.94-8.06 18-18 18h-412c-9.94 0-18-8.06-18-18v-668c0-9.94 8.06-18 18-18z"/>
-		<text id="H Hydrogen" style="transform: matrix(2.434,0,0,2.434,253,418)" >
+		<text id="Na Sodium" style="transform: matrix(2.434,0,0,2.434,255.305,402.045)" >
 			<tspan x="-39.5" y="0" class="t2">Fr</tspan><tspan  y="0" class="t2">
 </tspan>
 			<tspan x="-48" y="41.9" class="t3">francium</tspan><tspan  y="41.9" class="t3">
-</tspan>
-		</text>
-		<text id="." style="transform: matrix(1,0,0,1,254.793,650.847)" >
-			<tspan x="-21.2" y="0" class="t4">.</tspan><tspan  y="0" class="t4">
 </tspan>
 		</text>
 	</g>

@@ -43,7 +43,7 @@ class RoomDisplay extends React.Component {
       return;
     }
     this.fetchRoomData();
-    this.intervalId = setInterval(this.fetchRoomData, 500);
+    this.intervalId = setInterval(this.fetchRoomData, 1500);
   }
 
   componentWillUnmount() {
