@@ -1,11 +1,19 @@
 export default class playerClass {
     #hand
+    #selectedCard
 
-    constructor(playerName, selectedCard){
+    constructor(playerName){
         this.playerName = playerName;
-        this.selectedCard = selectedCard;
+        this.#selectedCard = {};
         this.#hand = 5;
     }
 
-    draw(){}
+    selectCard(name, key){
+        this.#selectedCard.name = name;
+        this.#selectedCard.key = key;
+    }
+
+    draw(){
+
+    }
 }

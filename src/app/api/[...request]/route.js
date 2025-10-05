@@ -40,15 +40,15 @@ export async function GET(request) {
 
       if (type === 1) {
         if (playerName === mapData.playerA){
-          response = mapData.handA
+          response = {hand: mapData.handA, turn: mapData[mapData.turn]};
         }else {
-          response = mapData.handB
+          response = {hand: mapData.handB, turn: mapData[mapData.turn]};
         }
       } else {
         if (playerName === mapData.playerA){
-          response = mapData.handB
+          response = {hand: mapData.handB, turn: mapData[mapData.turn]}
         }else {
-          response = mapData.handA
+          response = {hand: mapData.handA, turn: mapData[mapData.turn]}
         }
       }
       return NextResponse.json(response);

@@ -3,6 +3,7 @@
 import React from "react";
 import boardManager from "./BoardManager"; 
 import PlayerHand from "../../../componets/PlayerHand"; 
+import playerClass from "./playerClass";
 
 export default class mapDisplay extends React.Component {
     constructor(props) {
@@ -26,6 +27,10 @@ export default class mapDisplay extends React.Component {
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.centerScroll = this.centerScroll.bind(this);
+
+        this.playerService = new playerClass(props.playerName); 
+
+        this.handleCardSelected = this.handleCardSelected.bind(this);
     }
 
     async fetchmapData() {
@@ -91,7 +96,6 @@ export default class mapDisplay extends React.Component {
 
     handleMouseDown(e) {
         if (!this.scrollContainerRef.current) return;
-
         if (e.button !== 0) return; 
 
         this.setState({
@@ -153,10 +157,16 @@ export default class mapDisplay extends React.Component {
         }
     }
 
+    handleCardSelected(element, key){
+        this.playerService.selectCard(element, key);
+    }
+
     render() {
         const { mapData, loading } = this.state;
         const { room, youPlayerName, opponentPlayerName } = this.props; 
         const boardMap = mapData ? mapData.map : null; 
+        
+        const mapSignal = mapData ? mapData.turn : null;
 
         const renderBoard = () => {
             if (!boardMap || typeof boardMap !== 'object') {
@@ -237,11 +247,14 @@ export default class mapDisplay extends React.Component {
                             room={room} 
                             playerName={youPlayerName} 
                             type={"you"}
+                            onCardSelected={this.handleCardSelected}
+                            mapSignal={mapSignal}
                         />
                         <PlayerHand 
                             room={room} 
                             playerName={opponentPlayerName} 
                             type={"opponents"}
+                            mapSignal={mapSignal}
                         />
                     </>
                 )}

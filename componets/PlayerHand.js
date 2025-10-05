@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-export default function PlayerHand({ type, room, playerName}) {
+export default function PlayerHand({ type, room, playerName, onCardSelected, mapSignal}) {
     const [handData, setHandData] = useState(null);
+    const [turn, setTurn] = useState(null); 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -21,7 +22,8 @@ export default function PlayerHand({ type, room, playerName}) {
             }
 
             const data = await hand.json();
-            setHandData(data);
+            setHandData(data.hand);
+            setTurn(data.turn);
             setError(null);
 
         } catch (err) {
@@ -30,7 +32,7 @@ export default function PlayerHand({ type, room, playerName}) {
         } finally {
             setIsLoading(false);
         }
-    }, [room, playerName]);
+    }, [room, playerName, mapSignal]);
 
     useEffect(() => {
         fetchPlayerHand();
@@ -45,6 +47,7 @@ export default function PlayerHand({ type, room, playerName}) {
         ? "transition-transform duration-300 hover:-translate-y-16"
         : "";
 
+    const isMyTurn = turn === playerName.slice(1);
 
     if (isLoading) {
         return <div className={`flex justify-center w-screen ${positionClass}`}>Loading hand...</div>;
@@ -62,6 +65,14 @@ export default function PlayerHand({ type, room, playerName}) {
 
     const handImages = cardKeys.map((cardName) => {
         const cardData = handData[cardName];
+
+        const handleCardClick = (cardName) => {
+            if (type !== 'you') return;
+
+            if (onCardSelected) { 
+                onCardSelected(cardName, cardData.id);
+            }
+        };
         
         if (!cardData || cardData.id === undefined) {
              return null; 
@@ -96,7 +107,9 @@ export default function PlayerHand({ type, room, playerName}) {
                     justify-center items-center text-center text-xs ml-[-1.5rem] z-20
                     ${hoverClass}
                     ${transformClass} 
+                    ${isMyTurn ? 'cursor-pointer' : 'cursor-not-allowed'} 
                 `}
+                onClick={isMyTurn ? () => handleCardClick(cardName) : undefined}
             >
                 <img 
                     src={imgSrc} 
