@@ -134,8 +134,8 @@ export async function POST(request) {
 
           const data = await card.json();
 
-          player[data.element] = {
-              "id": await generateCardID.generate(4),
+          player[await generateCardID.generate(4)] = {
+              "element": data.element,
               "max_value": data.value,
               "value": data.value
           };
@@ -193,10 +193,16 @@ export async function POST(request) {
     } else if (set) {
       const data = await request.json();
       const roomCookieService = new CookieService('room');
+      const playerCookieService = new CookieService('username');
+      const player = await playerCookieService.getCookie();
       const id = await roomCookieService.getCookie();
       const coordinate = data.coordinate;
       const element = data.element;
       const value = data.value;
+
+      let key = "";
+      let hand = "";
+      let turn = "";
 
       let jsonPaths = [];
       let queryValues = [];
@@ -247,16 +253,23 @@ export async function POST(request) {
         if (!board.ok) {
             throw new Error("Room Not Found in Server");
         }
-
         const boardData = await board.json();
         const parentCoord = boardData.map[coordinate].parent;
+
+        key = data.key;
+
+        if (player === boardData.playerA){
+          hand = "handA";
+          turn = "playerB"
+        } else {
+          hand = "handB";
+          turn = "playerA"
+        }
 
         if (parentCoord !== "" && parentCoord !== null) { 
           const parentValue = boardData.map[coordinate].value;
           const parentElement = boardData.map[parentCoord].element;
           let resultValue = value - parentValue;
-
-          console.log(resultValue)
         
           if (resultValue === 0) {
             collectUpdates(coordinate, 0, false, true); 
@@ -277,10 +290,15 @@ export async function POST(request) {
       
       const jsonSetString = jsonPaths.join(',\n');
       
-      const query = `
+      let query = `
           UPDATE ${tableName} 
-          SET map = JSON_SET(map, ${jsonSetString})
-          WHERE room_id = ?`;
+          SET map = JSON_SET(map, ${jsonSetString}) `;
+
+      if (key !== "") {
+        query += `, ${hand} = JSON_REMOVE(${hand}, '$."${key}"'), turn = "${turn}"`; 
+      }
+
+      query += ` WHERE room_id = ?`;
 
       queryValues.push(id); 
       

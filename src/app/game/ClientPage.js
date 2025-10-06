@@ -4,6 +4,7 @@ import React from "react";
 import boardManager from "./BoardManager"; 
 import PlayerHand from "../../../componets/PlayerHand"; 
 import playerClass from "./playerClass";
+import TurnDisplay from "../../../componets/TurnDisplay";
 
 export default class mapDisplay extends React.Component {
     constructor(props) {
@@ -31,6 +32,15 @@ export default class mapDisplay extends React.Component {
         this.playerService = new playerClass(props.playerName); 
 
         this.handleCardSelected = this.handleCardSelected.bind(this);
+        this.handleCardPlaced = this.handleCardPlaced.bind(this);
+    }
+
+    handleCardSelected(element, key, value){
+        this.playerService.selectCard(element, key, value);
+    }
+
+    handleCardPlaced(coord){
+        this.playerService.place(coord)
     }
 
     async fetchmapData() {
@@ -76,7 +86,7 @@ export default class mapDisplay extends React.Component {
         this.fetchmapData();
         document.addEventListener('mouseup', this.handleMouseUp);
         document.addEventListener('mousemove', this.handleMouseMove);
-        this.intervalId = setInterval(this.fetchmapData, 2000);
+        this.intervalId = setInterval(this.fetchmapData, 1000);
     }
     
     componentDidUpdate(prevProps, prevState) {
@@ -157,10 +167,6 @@ export default class mapDisplay extends React.Component {
         }
     }
 
-    handleCardSelected(element, key){
-        this.playerService.selectCard(element, key);
-    }
-
     render() {
         const { mapData, loading } = this.state;
         const { room, youPlayerName, opponentPlayerName } = this.props; 
@@ -173,6 +179,8 @@ export default class mapDisplay extends React.Component {
                 return <p>Data Error</p>;
             }
 
+            const isMyTurn = mapData[mapData.turn] === youPlayerName.slice(1);
+            
             const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
             let boardElements = [];
 
@@ -204,7 +212,8 @@ export default class mapDisplay extends React.Component {
                                     />
                                 </div>
                             ) : cellData?.value ? (
-                                <div className="h-[258px]">
+                                <div className="h-[258px]"
+                                onClick={isMyTurn ? () => this.handleCardPlaced(key) : undefined}>
                                 <img 
                                     src={`place holder.png`} 
                                     alt={cellData.element}
@@ -256,6 +265,7 @@ export default class mapDisplay extends React.Component {
                             type={"opponents"}
                             mapSignal={mapSignal}
                         />
+                        <TurnDisplay turn={mapData[mapData.turn] === youPlayerName.slice(1) ? "Your" : `${mapData[mapData.turn]}'s`}/>
                     </>
                 )}
                 

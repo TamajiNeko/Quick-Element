@@ -9,13 +9,20 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
     const [error, setError] = useState(null);
 
     const fetchPlayerHand = useCallback(async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // Timeout 10 วินาที
+
         try {
             if (!room || !playerName) {
                 setIsLoading(false);
                 return;
             }
             
-            const hand = await fetch(`/api/map_data?get_map=${room}&hand=${playerName}`);
+            const hand = await fetch(`/api/map_data?get_map=${room}&hand=${playerName}`, {
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
 
             if (!hand.ok) {
                 throw new Error("Room Not Found in Server or API Error");
@@ -27,9 +34,13 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
             setError(null);
 
         } catch (err) {
-            console.error("Fetch error:", err);
-            setError(err.message);
+            if (err.name === 'AbortError') {
+                setError("Request timed out. Server is too slow.");
+            } else {
+                setError(err.message);
+            }
         } finally {
+            clearTimeout(timeoutId);
             setIsLoading(false);
         }
     }, [room, playerName, mapSignal]);
@@ -41,50 +52,37 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
     
     const positionClass = type === 'you' 
         ? "fixed bottom-[-4rem] z-20"
-        : "fixed top-[-4rem] z-10";
-
-    const hoverClass = type === 'you' 
-        ? "transition-transform duration-300 hover:-translate-y-16"
-        : "";
+        : "fixed top-[-4rem] z-20";
 
     const isMyTurn = turn === playerName.slice(1);
 
+
+    const handleCardClick = (cardName, cardID, maxValue) => {
+        if (onCardSelected) {
+            onCardSelected(cardName, cardID, maxValue);
+        }
+    };
+
     if (isLoading) {
-        return <div className={`flex justify-center w-screen ${positionClass}`}>Loading hand...</div>;
+        return (
+            <div className={positionClass}>
+                <p className="text-[1.5rem] p-4">Loading hand...</p>
+            </div>
+        );
     }
 
     if (error) {
-        return <div className={`flex justify-center w-screen ${positionClass} text-red-500`}>Error loading player hand: {error}</div>;
+        return (
+            <div className={positionClass}>
+                <p className="text-[1.5rem] p-4 text-red-500">Error: {error}</p>
+            </div>
+        );
     }
-    
-    if (!handData || Object.keys(handData).length === 0) {
-        return <div className={`flex justify-center w-screen ${positionClass}`}>Hand is empty.</div>;
-    }
 
-    const cardKeys = Object.keys(handData);
-
-    const handImages = cardKeys.map((cardName) => {
-        const cardData = handData[cardName];
-
-        const handleCardClick = (cardName) => {
-            if (type !== 'you') return;
-
-            if (onCardSelected) { 
-                onCardSelected(cardName, cardData.id);
-            }
-        };
-        
-        if (!cardData || cardData.id === undefined) {
-             return null; 
-        }
-
-        const imgSrc = type === 'you' 
-            ? `/cards/${cardName}.svg`
-            : `/cards/back.png`;
-
-        const altText = type === 'you'
-            ? cardName 
-            : 'Opponent\'s Card Back'; 
+    const renderCard = (cardData, cardName, cardID) => {
+        const imgSrc = type === 'you' ? `cards/${cardData.element}.svg` : 'cards/back.png';
+        const hoverClass = type === 'you' && isMyTurn ? 'transition-transform duration-300 hover:-translate-y-16' : '';
+        const altText = type === 'you' ? cardName : 'Opponent\'s Card Back'; 
 
         const transformClass = type === 'opponents' 
             ? "rotate-180" 
@@ -101,7 +99,7 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
 
         return (
             <div
-                key={cardData.id}
+                key={cardID}
                 className={`
                     relative board-cell w-[180px] h-[265px] flex flex-col shadow-xl p-0 corner rounded-[.5rem]
                     justify-center items-center text-center text-xs ml-[-1.5rem] z-20
@@ -109,7 +107,7 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
                     ${transformClass} 
                     ${isMyTurn ? 'cursor-pointer' : 'cursor-not-allowed'} 
                 `}
-                onClick={isMyTurn ? () => handleCardClick(cardName) : undefined}
+                onClick={isMyTurn ? () => handleCardClick(cardName, cardID, cardData.max_value) : undefined}
             >
                 <img 
                     src={imgSrc} 
@@ -120,11 +118,13 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
                 {overlay}
             </div>
         );
-    });
+    };
 
     return (
-        <div className={`flex flex-row justify-center w-screen ${positionClass}`}>
-            {handImages}
+        <div className={`flex flex-row justify-center items-center w-screen ${positionClass}`}>
+            {handData && Object.entries(handData).map(([cardID, cardData]) => 
+                renderCard(cardData, cardData.element, cardID)
+            )}
         </div>
     );
 }
