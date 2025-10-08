@@ -3,10 +3,9 @@
 import React from "react";
 import io from "socket.io-client"; 
 import PlayerHand from "../../../componets/PlayerHand"; 
-import playerClass from "./playerClass";
+import playerClass from "./PlayerClass";
 import TurnDisplay from "../../../componets/TurnDisplay";
 
-// ⚠️ ต้องตรงกับ Port ที่ Socket Server รันอยู่
 const SOCKET_SERVER_URL = "http://localhost:3001"; 
 
 export default class MapDisplay extends React.Component { 
@@ -21,10 +20,9 @@ export default class MapDisplay extends React.Component {
             scrollLeft: 0,
             scrollTop: 0,
             isDragDetected: false, 
+            winner: null,
         };
-        // ❌ ลบ this.intervalId ออก
-        // ❌ ลบ this.fetchmapData ออก
-        this.socket = null; // 🆕 เพิ่ม socket instance
+        this.socket = null;
         this.scrollContainerRef = React.createRef(); 
         
         this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -62,13 +60,21 @@ export default class MapDisplay extends React.Component {
         this.socket.on('gameUpdate', (data) => {
             const shouldCenter = !this.state.mapData;
             
-            this.setState({ mapData: data, loading: false }, () => {
+            this.setState({ 
+                mapData: data, 
+                loading: false, 
+                winner: data[data.winner] || null
+            }, () => {
                 if (shouldCenter) {
                     this.centerScroll();
                 }
             });
         });
         
+        this.socket.on('action_error', (error) => {
+            console.error('Game Action Error:', error.message);
+        });
+
         this.socket.on('connect_error', (err) => {
             console.error('Socket connection error:', err);
             this.setState({ loading: false, mapData: null }); 
@@ -83,15 +89,6 @@ export default class MapDisplay extends React.Component {
             this.socket.disconnect();
         }
         
-        document.removeEventListener('mouseup', this.handleMouseUp);
-        document.removeEventListener('mousemove', this.handleMouseMove);
-        document.body.style.userSelect = 'auto'; 
-    }
-    
-    componentWillUnmount() {
-        if (this.intervalId) {
-            clearInterval(this.intervalId);
-        }
         document.removeEventListener('mouseup', this.handleMouseUp);
         document.removeEventListener('mousemove', this.handleMouseMove);
         document.body.style.userSelect = 'auto'; 
@@ -156,18 +153,42 @@ export default class MapDisplay extends React.Component {
     }
 
     render() {
-        const { mapData, loading } = this.state;
+        const { mapData, loading, winner } = this.state;
         const { room, youPlayerName, opponentPlayerName } = this.props; 
+        
+        if (winner !== null) {
+            const isWinner = winner === youPlayerName.slice(1);
+            
+            return (
+                <div className="flex flex-col w-screen h-screen justify-center items-center bg-gray-900 text-white" onClick={() => window.location.reload()}>
+                    <h1 className="text-6xl font-bold mb-4">
+                        {isWinner ? "YOU WIN! o(*￣︶￣*)o" : "GAME OVER （；´д｀）ゞ"}
+                    </h1>
+                    <p className="text-2xl mb-8">
+                        {isWinner 
+                            ? `Congratulations, ${youPlayerName.slice(1)} (/≧▽≦)/` 
+                            : `The winner is ${winner}～`
+                        }
+                    </p>
+                    <p className="text-xl relative bottom-[-25%]">Click to Return</p>
+                </div>
+            );
+        }
+
         const boardMap = mapData ? mapData.map : null; 
         const mapSignal = mapData ? mapData.turn : null;
         let isMyTurn = false;
 
-        const playerName = youPlayerName.slice(1);
-        isMyTurn = mapData?.[mapData?.turn] === playerName;
+        const playerTurnName = mapData?.[mapData?.turn];
+        isMyTurn = playerTurnName === youPlayerName.slice(1);
+
 
         const renderBoard = () => {
-            if (!boardMap || typeof boardMap !== 'object') {
-                return <p className="text-red-500">Error: Board data is missing or corrupted.</p>;
+            if (!boardMap || typeof boardMap !== 'object' || Object.keys(boardMap).length === 0) {
+                 if (mapData && Object.keys(mapData).length > 0) {
+                    return <p className="text-red-500">Error: Board map data is empty or missing.</p>;
+                 }
+                return null;
             }
 
             const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
@@ -200,18 +221,19 @@ export default class MapDisplay extends React.Component {
                                         className="object-contain relative top-[-100%] z-10" 
                                     />
                                 </div>
-                            ) : cellData?.value ? (
+                            ) : 
+                            cellData?.value ? (
                                 <div className="h-[258px]"
-                                onClick={isMyTurn ? () => this.handleCardPlaced(key) : undefined}>
+                                onClick={!this.state.isDragDetected && isMyTurn ? () => this.handleCardPlaced(key) : undefined}>
                                 <img 
                                     src={`place holder.png`} 
-                                    alt={cellData.element}
+                                    alt="Placeholder"
                                     draggable="false"
                                     className="object-contain" 
                                 />
                                     <img 
                                         src={`bond/${cellData.value}_grey.svg`} 
-                                        alt={cellData.element}
+                                        alt={`Bond ${cellData.value}`}
                                         draggable="false"
                                         className="object-contain relative top-[-132%] z-10 fill-{#515151}" 
                                     />
@@ -254,7 +276,7 @@ export default class MapDisplay extends React.Component {
                             type={"opponents"}
                             mapSignal={mapSignal}
                         />
-                        <TurnDisplay turn={isMyTurn ? "Your" : `${mapData[mapData.turn]}'s`}/>
+                        <TurnDisplay turn={isMyTurn ? "Your" : `${playerTurnName}'s`}/>
                     </>
                 )}
                 

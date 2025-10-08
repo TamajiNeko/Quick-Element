@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
 
-const SOCKET_SERVER_URL = "http://localhost:3001"; 
+const SOCKET_SERVER_URL = "localhost:3001"; 
 
 export default function PlayerHand({ type, room, playerName, onCardSelected, mapSignal }) {
     const [handData, setHandData] = useState(null);

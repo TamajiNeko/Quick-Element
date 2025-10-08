@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import pool from '../../../../lib/MySql';
 import CookieService from '../../../../lib/CookieService';
+import { json } from 'express';
+
+const GameInitializer = require('../../../../modules/GameInitializer')
+const gameInitializer = new GameInitializer();
 
 export async function GET(request) {
     const { pathname, searchParams } = request.nextUrl;
@@ -46,6 +50,7 @@ export async function POST(request) {
     const leave = searchParams.get('leave');
     const ready = searchParams.get('ready');
     const remove = searchParams.get('remove');
+    const draw = searchParams.get('draw');
 
     try {
         const db = await pool.getConnection();
@@ -54,7 +59,7 @@ export async function POST(request) {
             const playerCookieService = new CookieService('username');
             const playerA = await playerCookieService.getCookie();
             const playerB = "Waiting..."
-            const codeGenerator = async(lenght) => {return Math.random().toString(36).substring(2, 2 + lenght);}
+            const codeGenerator = async (lenght) => { return Math.random().toString(36).substring(2, 2 + lenght); }
             const id = await codeGenerator(6);
             const roomCookieService = new CookieService('room');
             roomCookieService.setCookie(id);
@@ -109,7 +114,8 @@ export async function POST(request) {
             const query = `delete from ${tableName} where id = ?`;
             await db.execute(query, [remove]);
             return NextResponse.json({ status: 200 });
-        } else {
+        }
+        else {
             db.release();
             return NextResponse.json({ error: "Query parameter is required." }, { status: 400 });
         }

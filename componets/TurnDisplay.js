@@ -29,10 +29,7 @@ export default function TurnDisplay(turn) {
 
     useEffect(() => {
         if (currentTurn && currentTurn !== lastNotifiedTurnRef.current) {
-            console.log(`Turn changed from ${lastNotifiedTurnRef.current} to ${currentTurn}. Showing overlay.`);
-            
             setShowOverlay(true);
-            
             lastNotifiedTurnRef.current = currentTurn;
         }
     }, [currentTurn]); 

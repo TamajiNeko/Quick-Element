@@ -1,14 +1,11 @@
 'use client';
 
-// ❌ ลบการ import redirect ออก เนื่องจากทำให้เกิด error
-// import { redirect } from 'next/navigation'; 
 import { useState } from 'react';
 
 const RoomCodeForm = ({ setRoomID }) =>  {
   
   const [isLoading, setLoading] = useState(false);
 
-  // --- handleCreateRoom: ใช้งาน let ถูกต้องแล้ว ---
   const handleCreateRoom = async () => {
     let response;
     setLoading(true);
@@ -26,23 +23,17 @@ const RoomCodeForm = ({ setRoomID }) =>  {
     }
 
     if (response && response.ok) {
-      // ✅ แก้ไข: ใช้วิธีนำทางที่เข้ากันได้กับ Client Component (window.location)
       window.location.href = '/lobby/lounge/seat'; 
     }
   };
 
-  // --- handleRequest: แก้ไขให้ใช้ let สำหรับ response และการนำทาง ---
   const handleRequest = async (formData) => {
-    // 1. ประกาศด้วย let เพื่อให้กำหนดค่าใหม่ได้
     let response; 
     
-    // 2. เรียกใช้ setRoomID และกำหนดค่าให้ response ครั้งแรก
-    //    *สมมติว่า setRoomID(formData) ส่งคืนค่าบางอย่างที่จำเป็น หรือเป็น Response object*
     response = await setRoomID(formData); 
     
     setLoading(true);
     try {
-      // 3. กำหนดค่าใหม่ให้กับ response (fetch call)
       response = await fetch('/api/room?join=true', {
         method: 'POST',
       });
