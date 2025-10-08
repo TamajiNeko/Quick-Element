@@ -1,18 +1,20 @@
 "use client";
 
 import React from "react";
-import boardManager from "./BoardManager"; 
+import io from "socket.io-client"; 
 import PlayerHand from "../../../componets/PlayerHand"; 
 import playerClass from "./playerClass";
 import TurnDisplay from "../../../componets/TurnDisplay";
 
-export default class mapDisplay extends React.Component {
+// ⚠️ ต้องตรงกับ Port ที่ Socket Server รันอยู่
+const SOCKET_SERVER_URL = "http://localhost:3001"; 
+
+export default class MapDisplay extends React.Component { 
     constructor(props) {
         super(props);
         this.state = {
             mapData: null,
             loading: true,
-            
             isDragging: false,
             startX: 0,
             startY: 0,
@@ -20,8 +22,9 @@ export default class mapDisplay extends React.Component {
             scrollTop: 0,
             isDragDetected: false, 
         };
-        this.intervalId = null;
-        this.fetchmapData = this.fetchmapData.bind(this);
+        // ❌ ลบ this.intervalId ออก
+        // ❌ ลบ this.fetchmapData ออก
+        this.socket = null; // 🆕 เพิ่ม socket instance
         this.scrollContainerRef = React.createRef(); 
         
         this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -34,47 +37,13 @@ export default class mapDisplay extends React.Component {
         this.handleCardSelected = this.handleCardSelected.bind(this);
         this.handleCardPlaced = this.handleCardPlaced.bind(this);
     }
-
+    
     handleCardSelected(element, key, value){
         this.playerService.selectCard(element, key, value);
     }
 
     handleCardPlaced(coord){
-        this.playerService.place(coord)
-    }
-
-    async fetchmapData() {
-        const { room } = this.props;
-        try {
-            let response = await fetch(`/api/map_data?get_map=${room}`);
-
-            if (!response.ok) {
-                const fallback = await fetch(`/api/room?get_room=${room}`);
-                if (!fallback.ok) {
-                    throw new Error("Room Not Found in Server");
-                }
-                
-                const initialBoardArray = new boardManager().createInitialGameBoardJSON();
-                await fetch("/api/map_data?create_map=true", {
-                    method: "POST",
-                    body: JSON.stringify(initialBoardArray)
-                });
-
-                response = await fetch(`/api/map_data?get_map=${room}`);
-                if (!response.ok) {
-                    response = fallback; 
-                }
-                new boardManager().prepareGame();
-            }
-
-            const data = await response.json();
-            this.setState({ mapData: data });
-        } catch (error) {
-            console.error("Polling error:", error);
-            this.setState({ mapData: null });
-        } finally {
-            this.setState({ loading: false });
-        }
+        this.playerService.placeCard(coord, this.props.room, this.socket);
     }
 
     componentDidMount() {
@@ -83,18 +52,42 @@ export default class mapDisplay extends React.Component {
             this.setState({ loading: false });
             return;
         }
-        this.fetchmapData();
+
+        this.socket = io(SOCKET_SERVER_URL);
+
+        this.socket.on('connect', () => {
+            this.socket.emit('enterRoom', room);
+        });
+
+        this.socket.on('gameUpdate', (data) => {
+            const shouldCenter = !this.state.mapData;
+            
+            this.setState({ mapData: data, loading: false }, () => {
+                if (shouldCenter) {
+                    this.centerScroll();
+                }
+            });
+        });
+        
+        this.socket.on('connect_error', (err) => {
+            console.error('Socket connection error:', err);
+            this.setState({ loading: false, mapData: null }); 
+        });
+
         document.addEventListener('mouseup', this.handleMouseUp);
         document.addEventListener('mousemove', this.handleMouseMove);
-        this.intervalId = setInterval(this.fetchmapData, 1000);
-    }
-    
-    componentDidUpdate(prevProps, prevState) {
-        if (!prevState.mapData && this.state.mapData) {
-            this.centerScroll();
-        }
     }
 
+    componentWillUnmount() {
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+        
+        document.removeEventListener('mouseup', this.handleMouseUp);
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.body.style.userSelect = 'auto'; 
+    }
+    
     componentWillUnmount() {
         if (this.intervalId) {
             clearInterval(this.intervalId);
@@ -155,15 +148,10 @@ export default class mapDisplay extends React.Component {
 
     centerScroll() {
         const container = this.scrollContainerRef.current;
-
         if (container) {
             const scrollX = (container.scrollWidth - container.clientWidth) / 2;
             const scrollY = (container.scrollHeight - container.clientHeight) / 2;
-
-            container.scrollTo({
-                left: scrollX,
-                top: scrollY
-            });
+            container.scrollTo({ left: scrollX, top: scrollY });
         }
     }
 
@@ -171,16 +159,17 @@ export default class mapDisplay extends React.Component {
         const { mapData, loading } = this.state;
         const { room, youPlayerName, opponentPlayerName } = this.props; 
         const boardMap = mapData ? mapData.map : null; 
-        
         const mapSignal = mapData ? mapData.turn : null;
+        let isMyTurn = false;
+
+        const playerName = youPlayerName.slice(1);
+        isMyTurn = mapData?.[mapData?.turn] === playerName;
 
         const renderBoard = () => {
             if (!boardMap || typeof boardMap !== 'object') {
-                return <p>Data Error</p>;
+                return <p className="text-red-500">Error: Board data is missing or corrupted.</p>;
             }
 
-            const isMyTurn = mapData[mapData.turn] === youPlayerName.slice(1);
-            
             const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
             let boardElements = [];
 
@@ -247,7 +236,7 @@ export default class mapDisplay extends React.Component {
                 </div>
             );
         };
-        
+
         return (
             <main className="w-screen h-screen">
                 {mapData && (
@@ -265,7 +254,7 @@ export default class mapDisplay extends React.Component {
                             type={"opponents"}
                             mapSignal={mapSignal}
                         />
-                        <TurnDisplay turn={mapData[mapData.turn] === youPlayerName.slice(1) ? "Your" : `${mapData[mapData.turn]}'s`}/>
+                        <TurnDisplay turn={isMyTurn ? "Your" : `${mapData[mapData.turn]}'s`}/>
                     </>
                 )}
                 
@@ -273,12 +262,12 @@ export default class mapDisplay extends React.Component {
                     
                     {loading ? (
                         <p className="text-[1.5rem] flex justify-center items-center w-full flex-grow">
-                            Loading...
+                            Connecting to Game Server...
                         </p>
                     ) : !mapData ? (
                         <div className="flex flex-col flex-grow justify-center items-center w-full">
                         <p className="text-[1.5rem] ">
-                            404 | Room not found ｡°(°¯᷄◠¯᷅°)°｡
+                            404 | Room not found or connection failed ｡°(°¯᷄◠¯᷅°)°｡
                         </p>
                         </div>
                     ) : (

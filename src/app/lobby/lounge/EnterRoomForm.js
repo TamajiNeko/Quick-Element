@@ -56,12 +56,11 @@ const RoomCodeForm = ({ setRoomID }) =>  {
     }
 
     if (response && response.ok) {
-      // ✅ เพิ่มการนำทางเมื่อ Join สำเร็จ
       window.location.href = '/lobby/lounge/seat';
     }
   };
 
-  const buttonClasses = `flex justify-center w-[50%] rounded-4xl text-white text-center font-[700] transition-colors duration-200`;
+  const buttonClasses = `flex justify-center w-[50%] rounded-4xl text-white text-center font-[700]`;
 
   const disabledButtonClasses = `bg-gray-400 cursor-not-allowed`;
 

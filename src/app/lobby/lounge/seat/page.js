@@ -1,7 +1,7 @@
 import ClientPage from './ClientPage';
 import LobbyRouter from '../../../../../lib/LobbyRouter';
 import BackButton from '../../../../../componets/BackButton';
-import { Leave } from '../../../../../lib/Leave';
+import { Leave } from './Leave';
 import CookieService from "../../../../../lib/CookieService";
 
 export const metadata = {
