@@ -23,11 +23,11 @@ const io = new Server(httpServer, {
 });
 
 io.on('connection', (socket) => {
-    console.log(`User connected: ${socket.id}`);
+    console.log(`[SOCKET] User ${socket.id} connected`);
 
     socket.on('enterRoom', async (room) => {
         socket.join(room);
-        console.log(`[SOCKET] ${socket.id} joined room: ${room}`);
+        console.log(`[SOCKET] User ${socket.id} fetching ${room}`);
 
         try {
             const [roomData] = await pool.execute(
@@ -59,7 +59,7 @@ io.on('connection', (socket) => {
                     };
                 }
                 else {
-                    console.log(`[DB] Initializing map_data for room: ${room}`);
+                    console.log(`[DB] Map not found generating ${room}`);
 
                     const gameData = await gameInitializer.prepareGame();
                     const insertQuery = `
@@ -86,12 +86,12 @@ io.on('connection', (socket) => {
 
                 socket.emit('gameUpdate', gameUpdateData);
             } else {
-                console.log(`[DB] Room ${room} not found.`);
-                socket.emit('action_error', { message: 'Room not found or invalid code.' });
+                console.log(`[DB] Room ${room} not found`);
+                socket.emit('action_error', { message: 'Room not found or invalid code' });
             }
         } catch (error) {
-            console.error("[ERROR] Initial map data fetch/initialization:", error);
-            socket.emit('action_error', { message: 'Failed to load or initialize game data.' });
+            console.error("[ERROR]", error);
+            socket.emit('action_error', { message: 'Failed to load or initialize game data' });
         }
     });
 
@@ -104,6 +104,8 @@ io.on('connection', (socket) => {
                 [room]
             );
             if (rows.length === 0) throw new Error("Room data not found.");
+
+            console.log(`[DB] ${playerName} is placing a card on ${room}`)
 
             const boardData = rows[0];
             const map = boardData.map;
@@ -220,7 +222,7 @@ io.on('connection', (socket) => {
             }
 
             if (drawACard !== null) {
-                console.log(`[DB] Initializing map_data for room: ${room}`);
+                console.log(`[DB] A card added to ${updatedRowData[drawACard]} hand on ${room}`);
 
                 const gameData = await gameInitializer.resetBoard();
                 const drawACard_ = await gameInitializer.drawACard();
@@ -257,6 +259,7 @@ io.on('connection', (socket) => {
                     room
                 ]);
                 winner = "playerA"
+                console.log(`[DB] Room ${room} ended winner ${updatedRowData[winner]}`);
             } else if (Object.keys(handB).length === 0) {
                 const query = `
                 UPDATE map_data SET winner = ? WHERE room_id = ?`;
@@ -266,6 +269,7 @@ io.on('connection', (socket) => {
                     room
                 ]);
                 winner = "playerB"
+                console.log(`[DB] Room ${room} ended winner ${updatedRowData[winner]}`);
             }
 
             const newMapData = {
@@ -283,8 +287,8 @@ io.on('connection', (socket) => {
             io.to(room).emit('gameUpdate', newMapData);
 
         } catch (error) {
-            console.error(`[ERROR] Card placement in room ${room}:`, error);
-            socket.emit('action_error', { message: 'Server failed to process your move.' });
+            console.error("[ERROR]", error);
+            socket.emit('action_error', { message: 'Server failed to process your move' });
         }
     });
 
@@ -297,6 +301,8 @@ io.on('connection', (socket) => {
                 [room]
             );
             if (rows.length === 0) throw new Error("Room data not found.");
+
+            console.log(`[DB] A card added to ${playerName} hand on ${room}`);
 
             const boardData = rows[0];
 
@@ -340,15 +346,15 @@ io.on('connection', (socket) => {
 
         } catch (error) {
             console.error(`[ERROR] Draw a Card in ${room}:`, error);
-            socket.emit('action_error', { message: 'Server failed to process your move.' });
+            socket.emit('action_error', { message: 'Server failed to process your move' });
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        console.log('[SOCKET] User disconnected:', socket.id);
     });
 });
 
 httpServer.listen(SERVER_PORT, () => {
-    console.log(`HTTP Server (and Socket.io) listening on port ${SERVER_PORT}`);
+    console.log(`Quick Element server listening on port ${SERVER_PORT}`);
 });
