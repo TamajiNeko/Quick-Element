@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import pool from '../../../../lib/MySql';
+import pool from '../../../../modules/MySql';
 import CookieService from '../../../../lib/CookieService';
-import { json } from 'express';
 
 const GameInitializer = require('../../../../modules/GameInitializer')
 const gameInitializer = new GameInitializer();

@@ -5,6 +5,8 @@ import io from "socket.io-client";
 import PlayerHand from "../../../componets/PlayerHand"; 
 import playerClass from "./PlayerClass";
 import TurnDisplay from "../../../componets/TurnDisplay";
+import Deck from "../../../componets/deck";
+import { Leave } from "../../../lib/Leave";
 
 const SOCKET_SERVER_URL = "http://localhost:3001"; 
 
@@ -13,6 +15,9 @@ export default class MapDisplay extends React.Component {
         super(props);
         this.state = {
             mapData: null,
+            placedMap: null,
+            drawACard: null,
+            bondMaker: null,
             loading: true,
             isDragging: false,
             startX: 0,
@@ -34,14 +39,19 @@ export default class MapDisplay extends React.Component {
 
         this.handleCardSelected = this.handleCardSelected.bind(this);
         this.handleCardPlaced = this.handleCardPlaced.bind(this);
+        this.handleDrawACard = this.handleDrawACard.bind(this);
     }
     
-    handleCardSelected(element, key, value){
-        this.playerService.selectCard(element, key, value);
+    handleCardSelected(element, key, value, group){
+        this.playerService.selectCard(element, key, value, group);
     }
 
     handleCardPlaced(coord){
         this.playerService.placeCard(coord, this.props.room, this.socket);
+    }
+
+    handleDrawACard(){
+        this.playerService.drawACard(this.props.room, this.socket)
     }
 
     componentDidMount() {
@@ -59,6 +69,19 @@ export default class MapDisplay extends React.Component {
 
         this.socket.on('gameUpdate', (data) => {
             const shouldCenter = !this.state.mapData;
+            if (data.drawACard) {
+                this.setState({
+                    drawACard: data[`player${data.drawACard.slice(4)}`],
+                    bondMaker: data[data.bondMaker],
+                    placedMap: data.placedMap
+                })
+            } else {
+                this.setState({
+                    drawACard: null,
+                    bondMaker: null,
+                    placedMap: null
+                })
+            }
             
             this.setState({ 
                 mapData: data, 
@@ -153,14 +176,14 @@ export default class MapDisplay extends React.Component {
     }
 
     render() {
-        const { mapData, loading, winner } = this.state;
+        const { mapData, loading, winner, drawACard, bondMaker, placedMap } = this.state;
         const { room, youPlayerName, opponentPlayerName } = this.props; 
-        
+
         if (winner !== null) {
             const isWinner = winner === youPlayerName.slice(1);
             
             return (
-                <div className="flex flex-col w-screen h-screen justify-center items-center bg-gray-900 text-white" onClick={() => window.location.reload()}>
+                <div className="flex flex-col w-screen h-screen justify-center items-center bg-gray-900 text-white" onClick={Leave}>
                     <h1 className="text-6xl font-bold mb-4">
                         {isWinner ? "YOU WIN! o(*￣︶￣*)o" : "GAME OVER （；´д｀）ゞ"}
                     </h1>
@@ -181,7 +204,6 @@ export default class MapDisplay extends React.Component {
 
         const playerTurnName = mapData?.[mapData?.turn];
         isMyTurn = playerTurnName === youPlayerName.slice(1);
-
 
         const renderBoard = () => {
             if (!boardMap || typeof boardMap !== 'object' || Object.keys(boardMap).length === 0) {
@@ -276,7 +298,8 @@ export default class MapDisplay extends React.Component {
                             type={"opponents"}
                             mapSignal={mapSignal}
                         />
-                        <TurnDisplay turn={isMyTurn ? "Your" : `${playerTurnName}'s`}/>
+                        <TurnDisplay turn={isMyTurn ? "Your" : `${playerTurnName}'s`}  drawACard={drawACard} bondMaker={bondMaker} map={placedMap}/>
+                        <Deck isMyTurn={isMyTurn} playerName={youPlayerName} onDrawACard={this.handleDrawACard}/>
                     </>
                 )}
                 

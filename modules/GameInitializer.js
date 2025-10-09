@@ -1,5 +1,5 @@
 const path = require('path');
-const pool = require('../lib/MySql')
+const pool = require('../modules/MySql');
 const generateCardID = async (lenght) => { return Math.random().toString(36).substring(2, 2 + lenght); }
 
 const getRandomCardFromDB = async () => {
@@ -7,7 +7,7 @@ const getRandomCardFromDB = async () => {
         const randomId = Math.floor(Math.random() * (38 - 1 + 1)) + 1;
 
         const [rows] = await pool.execute(
-            `SELECT element, value FROM element_lib WHERE id = ?`,
+            `SELECT element, value, element_group FROM element_lib WHERE id = ?`,
             [randomId]
         );
 
@@ -16,6 +16,7 @@ const getRandomCardFromDB = async () => {
         return {
             element: rows[0].element,
             value: rows[0].value,
+            group: rows[0].element_group 
         };
     } catch (error) {
         console.error("DB Error fetching random card:", error);
@@ -33,6 +34,7 @@ class GameInitializer {
 
                 hand[cardID] = {
                     "element": data.element,
+                    "group": data.group,
                     "max_value": data.value,
                     "value": data.value
                 };
@@ -76,6 +78,7 @@ class GameInitializer {
 
         initialMap[centralCoord] = {
             "element": startCard.element,
+            "group": startCard.group,
             "parent": "",
             "bond": startCard.value,
             "value": startCard.value,
@@ -113,6 +116,7 @@ class GameInitializer {
 
         initialMap[centralCoord] = {
             "element": startCard.element,
+            "group": startCard.group,
             "parent": "",
             "bond": startCard.value,
             "value": startCard.value,
@@ -142,6 +146,7 @@ class GameInitializer {
             const newCardObject = {
                 [cardID]: {
                     "element": data.element,
+                    "group": data.group,
                     "max_value": data.value,
                     "value": data.value
                 }

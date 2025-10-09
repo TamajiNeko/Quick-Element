@@ -74,9 +74,9 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
     const isMyTurn = currentTurnPlayer === getPlayerNameSlice;
 
 
-    const handleCardClick = (cardName, cardID, maxValue) => {
+    const handleCardClick = (cardName, cardID, maxValue, group) => {
         if (onCardSelected && isMyTurn) {
-            onCardSelected(cardName, cardID, maxValue);
+            onCardSelected(cardName, cardID, maxValue, group);
         }
     };
 
@@ -122,7 +122,7 @@ export default function PlayerHand({ type, room, playerName, onCardSelected, map
                     ${transformClass} 
                     ${isMyTurn && type === 'you' ? 'cursor-pointer' : 'cursor-not-allowed'} 
                 `}
-                onClick={isMyTurn && type === 'you' ? () => handleCardClick(cardData.element, cardID, cardData.max_value) : undefined}
+                onClick={isMyTurn && type === 'you' ? () => handleCardClick(cardData.element, cardID, cardData.max_value, cardData.group) : undefined}
             >
                 <img 
                     src={imgSrc} 

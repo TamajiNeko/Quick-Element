@@ -7,12 +7,19 @@ export default class playerClass {
         this.#selectedCard = null;
     }
 
-    async drawACard(){
-        await fetch(`/api/map_data?draw=${this.playerName}`, {method: 'POST'});
+    async drawACard(room, socket){
+        if (!this.playerName || !room || !socket) {
+            console.error("Card, socket, or room missing for placement.");
+            return;
+        }
+        socket.emit('drawACard', {
+            room: room,
+            playerName: this.playerName
+        });
     }
 
-    selectCard(element, key, value) {
-        this.#selectedCard = { element, key, value };
+    selectCard(element, key, value, group) {
+        this.#selectedCard = { element, key, value, group };
     }
 
     placeCard(coord, room, socket) {
@@ -21,7 +28,7 @@ export default class playerClass {
             return;
         }
         
-        const { element, key, value } = this.#selectedCard;
+        const { element, key, value, group } = this.#selectedCard;
 
         socket.emit('cardPlacedAction', {
             room: room,
@@ -29,6 +36,7 @@ export default class playerClass {
             coordinate: coord,
             element: element,
             value: value,
+            group: group,
             key: key,
         });
 

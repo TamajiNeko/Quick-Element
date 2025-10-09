@@ -7,7 +7,7 @@ require('dotenv').config({
     path: path.resolve(__dirname, '../../.env.local')
 });
 
-const pool = require('../../lib/MySql');
+const pool = require('../../modules/MySql');
 const GameInitializer = require('../../modules/GameInitializer');
 const gameInitializer = new GameInitializer();
 
@@ -96,11 +96,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('cardPlacedAction', async (data) => {
-        const { room, coordinate, element, value, key, playerName } = data;
+        const { room, coordinate, element, value, group, key, playerName } = data;
 
         try {
             const [rows] = await pool.execute(
-                `SELECT * FROM map_data INNER JOIN room WHERE room_id = ?`,
+                `SELECT * FROM map_data INNER JOIN room ON room.id = map_data.room_id WHERE room_id = ?`,
                 [room]
             );
             if (rows.length === 0) throw new Error("Room data not found.");
@@ -118,7 +118,7 @@ io.on('connection', (socket) => {
             let jsonPaths = [];
             let queryValues = [];
 
-            const collectUpdates = (coord, newValue, isParent = false, isClear = false, parentElement = "") => {
+            const collectUpdates = (coord, newValue, isParent = false, isClear = false, parentElement = null, group = null) => {
                 const col = parseInt(coord.substring(1), 10);
                 const rowChar = coord.charAt(0);
                 const rowIndex = rowChar.charCodeAt(0);
@@ -132,6 +132,9 @@ io.on('connection', (socket) => {
 
                 jsonPaths.push(`'${'$.' + coord + '.value'}', ?`);
                 queryValues.push(newValue);
+
+                jsonPaths.push(`'${'$.' + coord + '.group'}', ?`);
+                queryValues.push(group);
 
                 jsonPaths.push(`'${'$.' + coord + '.parent'}', ?`);
                 queryValues.push("");
@@ -160,22 +163,23 @@ io.on('connection', (socket) => {
             }
 
             const parentCoord = map[coordinate].parent;
+            const parentGroup = map[parentCoord].group;
             if (parentCoord !== "" && parentCoord !== null) {
                 const parentValue = map[coordinate].value;
                 const parentElement = map[parentCoord].element;
                 let resultValue = value - parentValue;
 
                 if (resultValue === 0) {
-                    collectUpdates(coordinate, 0, false, true);
-                    collectUpdates(parentCoord, 0, true, true, parentElement);
+                    collectUpdates(coordinate, 0, false, true, null, group);
+                    collectUpdates(parentCoord, 0, true, true, parentElement, parentGroup);
 
                 } else if (resultValue < 0) {
-                    collectUpdates(coordinate, 0, false, true);
-                    collectUpdates(parentCoord, Math.abs(resultValue), true, false, parentElement);
+                    collectUpdates(coordinate, 0, false, true, null, group);
+                    collectUpdates(parentCoord, Math.abs(resultValue), true, false, parentElement, parentGroup);
 
                 } else if (resultValue > 0) {
-                    collectUpdates(coordinate, resultValue, false);
-                    collectUpdates(parentCoord, 0, true, true, parentElement);
+                    collectUpdates(coordinate, resultValue, false, false, null, group);
+                    collectUpdates(parentCoord, 0, true, true, parentElement, parentGroup);
                 }
             }
 
@@ -192,7 +196,7 @@ io.on('connection', (socket) => {
             await pool.execute(updateQuery, queryValues);
 
             const [updatedRows] = await pool.execute(
-                `SELECT * FROM map_data INNER JOIN room WHERE room_id = ?`,
+                `SELECT * FROM map_data INNER JOIN room ON room.id = map_data.room_id WHERE room_id = ?`,
                 [room]
             );
 
@@ -203,6 +207,8 @@ io.on('connection', (socket) => {
             let handA = updatedRowData.handA;
             let handB = updatedRowData.handB;
             let winner = updatedRowData.winner;
+            let bondMaker = null;
+            let placedMap = null;
 
             for (const keyMap in updatedRowData.map) {
                 if (updatedRowData.map.hasOwnProperty(keyMap)) {
@@ -232,7 +238,14 @@ io.on('connection', (socket) => {
                     room
                 ]);
 
-                newMap = gameData.map
+                if (drawACard === "playerA") {
+                    bondMaker = "playerB"
+                } else {
+                    bondMaker = "playerA"
+                }
+
+                placedMap = newMap;
+                newMap = gameData.map;
             }
 
             if (Object.keys(handA).length === 0) {
@@ -261,7 +274,10 @@ io.on('connection', (socket) => {
                 handA: handA,
                 handB: handB,
                 turn: updatedRowData.turn,
-                winner: winner
+                winner: winner,
+                drawACard: drawACard,
+                bondMaker: bondMaker,
+                placedMap: placedMap
             };
 
             io.to(room).emit('gameUpdate', newMapData);
@@ -272,6 +288,61 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('drawACard', async (data) => {
+        const { room, playerName } = data;
+
+        try {
+            const [rows] = await pool.execute(
+                `SELECT * FROM map_data INNER JOIN room WHERE room_id = ?`,
+                [room]
+            );
+            if (rows.length === 0) throw new Error("Room data not found.");
+
+            const boardData = rows[0];
+
+            if (boardData[boardData.turn] !== playerName) {
+                return socket.emit('action_error', { message: 'Not your turn.' });
+            }
+
+            let handColumn = (playerName === boardData.playerA) ? "handA" : "handB";
+            let nextTurnPlayer = (playerName === boardData.playerA) ? "playerB" : "playerA";
+
+            const drawACard_ = await gameInitializer.drawACard();
+            const cardID = Object.keys(drawACard_)[0];
+            const cardData = Object.values(drawACard_)[0];
+            const jsonPath = `$."${cardID}"`;
+
+            const insertQuery = `
+                UPDATE map_data SET ${handColumn} = json_set(${handColumn}, ?, CAST(? AS JSON)), turn = ? WHERE room_id = ?`;
+
+            await pool.execute(insertQuery, [
+                jsonPath,
+                cardData,
+                nextTurnPlayer,
+                room
+            ]);
+
+            const [updatedRows] = await pool.execute(
+                `SELECT * FROM map_data INNER JOIN room ON room.id = map_data.room_id WHERE room_id = ?`,
+                [room]
+            );
+
+            const updatedRowData = updatedRows[0];
+
+            const newMapData = {
+                ...updatedRowData,
+                handA: updatedRowData.handA,
+                handB: updatedRowData.handB,
+                turn: updatedRowData.turn,
+            };
+
+            io.to(room).emit('gameUpdate', newMapData);
+
+        } catch (error) {
+            console.error(`[ERROR] Draw a Card in ${room}:`, error);
+            socket.emit('action_error', { message: 'Server failed to process your move.' });
+        }
+    });
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
