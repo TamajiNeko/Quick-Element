@@ -9,7 +9,7 @@ export default class playerClass {
 
     async drawACard(room, socket){
         if (!this.playerName || !room || !socket) {
-            console.error("Card, socket, or room missing for placement.");
+            console.error("Player name, socket, or room missing for Drawing.");
             return;
         }
         socket.emit('drawACard', {
