@@ -48,7 +48,7 @@ const ReadyForm = ({ username, playerA, playerB, readyStatsA, readyStatsB }) => 
 
   const playerBClass = `${playerB === "Waiting..." ? 'text-gray-400' : 'text-black'}`;
   const buttonClass = `
-    flex justify-center w-[40%] h-[20%] rounded-4xl text-white text-center font-[700] 
+    flex justify-center w-[40%] h-[20%] rounded-4xl text-white text-center items-center font-[700] 
     ${isReadyButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#39b8ff] cursor-pointer'}
   `;
 

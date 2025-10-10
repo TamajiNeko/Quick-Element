@@ -51,7 +51,7 @@ const RoomCodeForm = ({ setRoomID }) =>  {
     }
   };
 
-  const buttonClasses = `flex justify-center w-[50%] rounded-4xl text-white text-center font-[700]`;
+  const buttonClasses = `flex justify-center w-[50%] rounded-4xl items-center text-white text-center font-[700]`;
 
   const disabledButtonClasses = `bg-gray-400 cursor-not-allowed`;
 

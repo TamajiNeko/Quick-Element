@@ -2,9 +2,6 @@ import { NextResponse } from 'next/server';
 import pool from '../../../../modules/MySql';
 import CookieService from '../../../../lib/CookieService';
 
-const GameInitializer = require('../../../../modules/GameInitializer')
-const gameInitializer = new GameInitializer();
-
 export async function GET(request) {
     const { pathname, searchParams } = request.nextUrl;
     const parts = pathname.split('/');
