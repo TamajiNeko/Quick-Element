@@ -13,8 +13,8 @@ export default function UserNamePlateWithEdit({ username }) {
       className="flex flex-row gap-[.5rem] items-center absolute right-[1rem] top-[.75rem] cursor-pointer" 
       onClick={handleDeleteUsername}
     >
-      <p className="text-[1.5rem]">{username || 'N/A'}</p>
-      <img src="/pen.svg" draggable="false" className="w-[1.5rem] h-[1.5rem]" alt="Edit or Delete Username"></img>
+      <p className="text-[2rem]">{username || 'N/A'}</p>
+      <img src="/pen.svg" draggable="false" className="w-[2rem] h-[2rem]" alt="Edit or Delete Username"></img>
     </div>
   );
 }
